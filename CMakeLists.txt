@@ -10,15 +10,19 @@ add_subdirectory(external/SDL)
 
 add_executable(PirateBoy 
     src/main.c
-)
-
-target_link_libraries(PirateBoy
-    PRIVATE 
-        SDL3::SDL3
+    include/memory.h 
 )
 
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES
     src/main.c
+    include/memory.h
+)
+
+target_include_directories(PirateBoy PRIVATE include)
+
+target_link_libraries(PirateBoy
+    PRIVATE 
+        SDL3::SDL3
 )
 
 
