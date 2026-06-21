@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
 project(PirateBoy LANGUAGES C)
-
 set(CMAKE_C_STANDARD 99)
 
 set(SDL_SHARED ON CACHE BOOL "" FORCE)
@@ -8,9 +7,11 @@ set(SDL_STATIC OFF CACHE BOOL "" FORCE)
 set(SDL_TEST_LIBRARY OFF CACHE BOOL "" FORCE)
 add_subdirectory(external/SDL)
 
-add_executable(PirateBoy 
+set(SDL3_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/external/SDL/include)
+
+add_executable(PirateBoy
     src/main.c
-    include/memory.h 
+    include/memory.h
 )
 
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES
@@ -21,8 +22,6 @@ source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES
 target_include_directories(PirateBoy PRIVATE include)
 
 target_link_libraries(PirateBoy
-    PRIVATE 
+    PRIVATE
         SDL3::SDL3
 )
-
-
