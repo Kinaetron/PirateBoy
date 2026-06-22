@@ -12,7 +12,7 @@ static SDL_GPUDevice* gpu_device = NULL;
 
 SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
 {
-	window = SDL_CreateWindow("PirateBoy Emulator", 480, 432, SDL_WINDOW_RESIZABLE);
+	window = SDL_CreateWindow("PirateBoy", 480, 432, SDL_WINDOW_RESIZABLE);
 
 	if (window == NULL)
 	{
