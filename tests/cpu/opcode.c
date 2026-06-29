@@ -2,7 +2,7 @@
 #include "unity.h"
 #include "memory.h"
 
-#include <malloc.h>
+#include <stdlib.h>
 #include <stdbool.h>
 
 #define TEST_ROM_SIZE 32768
@@ -17,7 +17,7 @@ void setUp(void)
     {
         memory->rom = malloc(TEST_ROM_SIZE);
         if (memory->rom != NULL) {
-            memset(memory->rom, 0x00, 32768);
+            memset(memory->rom, 0x00, TEST_ROM_SIZE);
         }
     }
 }
@@ -45,8 +45,7 @@ void test_cpu_step_opcode_0x01(void)
     memory->rom[0x01] = low_byte;
     memory->rom[0x02] = high_byte;
 
-    cpu_step(memory);
-
+    TEST_ASSERT_EQUAL_UINT8(12, cpu_step(memory));
     TEST_ASSERT_EQUAL_UINT8(low_byte, memory->bc.low);
     TEST_ASSERT_EQUAL_UINT8(high_byte, memory->bc.high);
     TEST_ASSERT_EQUAL_UINT16(0x0003, memory->program_counter);
@@ -60,8 +59,7 @@ void test_cpu_step_opcode_0x02(void)
 
     memory->rom[0x00] = 0x02;
 
-    cpu_step(memory);
-
+    TEST_ASSERT_EQUAL_UINT8(8, cpu_step(memory));
     TEST_ASSERT_EQUAL_UINT8(0x42, memory->wram[0xC050 - WRAM_START]);
     TEST_ASSERT_EQUAL_UINT16(0x0001, memory->program_counter);
 }
@@ -73,9 +71,8 @@ void test_cpu_step_opcode_0x03(void)
 
     memory->rom[0x00] = 0x03;
 
-    cpu_step(memory);
-
-    TEST_ASSERT_EQUAL_UINT8(result, memory->bc.value);
+    TEST_ASSERT_EQUAL_UINT8(8, cpu_step(memory));
+    TEST_ASSERT_EQUAL_UINT16(result, memory->bc.value);
     TEST_ASSERT_EQUAL_UINT16(0x0001, memory->program_counter);
 }
 
@@ -88,8 +85,7 @@ void test_cpu_step_opcode_0x04(void)
 
     memory->rom[0x00] = 0x04;
 
-    cpu_step(memory);
-
+    TEST_ASSERT_EQUAL_UINT8(4, cpu_step(memory));
     TEST_ASSERT_TRUE(get_register_flag(memory, C));
     TEST_ASSERT_FALSE(get_register_flag(memory, N));
     TEST_ASSERT_FALSE(get_register_flag(memory, Z));
@@ -107,8 +103,7 @@ void test_cpu_step_opcode_0x04_zero_flag(void)
 
     memory->rom[0x00] = 0x04;
 
-    cpu_step(memory);
-
+    TEST_ASSERT_EQUAL_UINT8(4, cpu_step(memory));
     TEST_ASSERT_FALSE(get_register_flag(memory, C));
     TEST_ASSERT_FALSE(get_register_flag(memory, N));
     TEST_ASSERT_TRUE(get_register_flag(memory, Z));
@@ -126,8 +121,7 @@ void test_cpu_step_opcode_0x04_zero_flag_regression(void)
 
     memory->rom[0x00] = 0x04;
 
-    cpu_step(memory);
-
+    TEST_ASSERT_EQUAL_UINT8(4, cpu_step(memory));
     TEST_ASSERT_FALSE(get_register_flag(memory, C));
     TEST_ASSERT_FALSE(get_register_flag(memory, N));
     TEST_ASSERT_FALSE(get_register_flag(memory, Z));
@@ -145,8 +139,7 @@ void test_cpu_step_opcode_0x04_half_carry(void)
 
     memory->rom[0x00] = 0x04;
 
-    cpu_step(memory);
-
+    TEST_ASSERT_EQUAL_UINT8(4, cpu_step(memory));
     TEST_ASSERT_FALSE(get_register_flag(memory, C));
     TEST_ASSERT_FALSE(get_register_flag(memory, N));
     TEST_ASSERT_FALSE(get_register_flag(memory, Z));
