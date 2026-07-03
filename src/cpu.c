@@ -73,6 +73,18 @@ static uint8_t fetch_byte(CPU_Memory* memory)
 	return value;
 }
 
+static uint16_t fetch_two_bytes(CPU_Memory* memory)
+{
+	uint16_t result = 0;
+	uint8_t byte_1 = fetch_byte(memory);
+	uint8_t byte_2 = fetch_byte(memory);
+
+	result = (uint16_t)byte_2 << 8;
+	result |= byte_1;
+
+	return result;
+}
+
 static uint8_t opcode_0x01(CPU_Memory* memory)
 {
 	uint8_t low = fetch_byte(memory);
@@ -144,6 +156,33 @@ static uint8_t opcode_0x07(CPU_Memory* memory)
 	return 4;
 }
 
+static uint8_t opcode_0x08(CPU_Memory* memory)
+{
+	uint16_t address = fetch_two_bytes(memory);
+
+	uint8_t stack_pointer_low = (uint8_t)(memory->stack_pointer & 0xFF);
+	uint8_t stack_pointer_high = (uint8_t)((memory->stack_pointer >> 8) & 0xFF);
+
+	memory_write(memory, address, stack_pointer_low);
+
+	address++;
+
+	memory_write(memory, address, stack_pointer_high);
+
+	return 20;
+}
+
+static uint8_t opcode_0x09(CPU_Memory* memory)
+{
+	set_register_flag(memory, N, false);
+	set_register_flag(memory, H, ((memory->hl.value & 0x0FFF) + (memory->bc.value & 0x0FFF)) > 0x0FFF);
+	set_register_flag(memory, C, ((uint32_t)memory->hl.value + (uint32_t)memory->bc.value) > 0xFFFF);
+
+	memory->hl.value += memory->bc.value;
+
+	return 8;
+}
+
 uint8_t cpu_step(CPU_Memory* memory)
 {
 	uint8_t opcode = fetch_byte(memory);
@@ -173,6 +212,12 @@ uint8_t cpu_step(CPU_Memory* memory)
 			break;
 		case 0x07:
 			cycles = opcode_0x07(memory);
+			break;
+		case 0x08:
+			cycles = opcode_0x08(memory);
+			break;
+		case 0x09:
+			cycles = opcode_0x09(memory);
 			break;
 		default:
 			break;
