@@ -379,6 +379,73 @@ static uint8_t opcode_0x1F(CPU_Memory* memory)
 	return 4;
 }
 
+static uint8_t opcode_0x20(CPU_Memory* memory)
+{
+	bool z_flag = get_register_flag(memory, Z);
+	int8_t value = (int8_t)fetch_byte(memory);
+
+	if (!z_flag)
+	{
+		memory->program_counter += value;
+		return 12;
+	}
+
+	return 8;
+}
+
+static uint8_t opcode_0x21(CPU_Memory* memory)
+{
+	memory->de.value = fetch_two_bytes(memory).value;
+
+	return 12;
+}
+
+static uint8_t opcode_0x22(CPU_Memory* memory)
+{
+	memory_write(memory, memory->hl.value, memory->af.high);
+	memory->hl.value++;
+
+	return 8;
+}
+
+static uint8_t opcode_0x23(CPU_Memory* memory)
+{
+	memory->hl.value++;
+
+	return 8;
+}
+
+static uint8_t opcode_0x24(CPU_Memory* memory)
+{
+	set_register_flag(memory, N, false);
+	set_register_flag(memory, H, (memory->hl.high & 0x0F) == 0x0F);
+
+	memory->hl.high++;
+
+	set_register_flag(memory, Z, memory->hl.high == 0x00);
+
+	return 4;
+}
+
+static uint8_t opcode_0x25(CPU_Memory* memory)
+{
+	set_register_flag(memory, N, true);
+	set_register_flag(memory, H, (memory->hl.high & 0x0F) == 0x00);
+
+	memory->hl.high--;
+
+	set_register_flag(memory, Z, memory->hl.high == 0x00);
+
+	return 4;
+}
+
+static uint8_t opcode_0x26(CPU_Memory* memory)
+{
+	memory->hl.high = fetch_byte(memory);
+
+	return 8;
+}
+
 uint8_t cpu_step(CPU_Memory* memory)
 {
 	uint8_t opcode = fetch_byte(memory);
@@ -477,6 +544,27 @@ uint8_t cpu_step(CPU_Memory* memory)
 			break;
 		case 0x1F:
 			cycles = opcode_0x1F(memory);
+			break;
+		case 0x20:
+			cycles = opcode_0x20(memory);
+			break;
+		case 0x21:
+			cycles = opcode_0x21(memory);
+			break;
+		case 0x22:
+			cycles = opcode_0x22(memory);
+			break;
+		case 0x23:
+			cycles = opcode_0x23(memory);
+			break;
+		case 0x24:
+			cycles = opcode_0x24(memory);
+			break;
+		case 0x25:
+			cycles = opcode_0x25(memory);
+			break;
+		case 0x26:
+			cycles = opcode_0x26(memory);
 			break;
 		default:
 			break;
