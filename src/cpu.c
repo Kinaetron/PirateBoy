@@ -446,6 +446,44 @@ static uint8_t opcode_0x26(CPU_Memory* memory)
 	return 8;
 }
 
+static uint8_t opcode_0x27(CPU_Memory* memory)
+{
+	uint8_t offset = 0;
+	bool carry = false;
+
+	uint8_t a_value = memory->af.high;
+	bool h_flag = get_register_flag(memory, H);
+	bool c_flag = get_register_flag(memory, C);
+	bool n_flag = get_register_flag(memory, N);
+
+	uint8_t low_byte_offset = 0x06;
+	uint8_t high_byte_offset = 0x60;
+
+	if (n_flag == false && (a_value & 0xF) > 0x09 || h_flag == true) {
+		offset |= low_byte_offset;
+	}
+
+	if (n_flag == false && a_value > 0x99 || c_flag == true) 
+	{
+		offset |= high_byte_offset;
+		carry = true;
+	}
+	
+	if (n_flag) {
+		a_value -= offset;
+	}
+	else {
+		a_value += offset;
+	}
+
+	memory->af.high = a_value;
+	set_register_flag(memory, H, false);
+	set_register_flag(memory, C, carry);
+	set_register_flag(memory, Z, memory->af.high == 0);
+
+	return 4;
+}
+
 uint8_t cpu_step(CPU_Memory* memory)
 {
 	uint8_t opcode = fetch_byte(memory);
@@ -565,6 +603,9 @@ uint8_t cpu_step(CPU_Memory* memory)
 			break;
 		case 0x26:
 			cycles = opcode_0x26(memory);
+			break;
+		case 0x27:
+			cycles = opcode_0x27(memory);
 			break;
 		default:
 			break;
