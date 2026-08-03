@@ -395,7 +395,7 @@ static uint8_t opcode_0x20(CPU_Memory* memory)
 
 static uint8_t opcode_0x21(CPU_Memory* memory)
 {
-	memory->de.value = fetch_two_bytes(memory).value;
+	memory->hl.value = fetch_two_bytes(memory).value;
 
 	return 12;
 }
@@ -487,10 +487,10 @@ static uint8_t opcode_0x27(CPU_Memory* memory)
 static uint8_t opcode_0x28(CPU_Memory* memory)
 {
 	bool z_flag = get_register_flag(memory, Z);
+	int8_t jump_value = (int8_t)fetch_byte(memory);
 
 	if (z_flag)
 	{
-		int8_t jump_value = (int8_t)fetch_byte(memory);
 		memory->program_counter += jump_value;
 
 		return 12;
@@ -565,6 +565,173 @@ static uint8_t opcode_0x2F(CPU_Memory* memory)
 
 	return 4;
 }
+
+static uint8_t opcode_0x30(CPU_Memory* memory)
+{
+	bool c_flag = get_register_flag(memory, C);
+	int8_t value = (int8_t)fetch_byte(memory);
+
+	if (!c_flag)
+	{
+		memory->program_counter += value;
+		return 12;
+	}
+
+	return 8;
+}
+
+static uint8_t opcode_0x31(CPU_Memory* memory)
+{
+	memory->stack_pointer = fetch_two_bytes(memory).value;
+
+	return 12;
+}
+
+static uint8_t opcode_0x32(CPU_Memory* memory)
+{
+	memory_write(memory, memory->hl.value, memory->af.high);
+	memory->hl.value--;
+
+	return 8;
+}
+
+static uint8_t opcode_0x33(CPU_Memory* memory)
+{
+	memory->stack_pointer++;
+
+	return 8;
+}
+
+static uint8_t opcode_0x34(CPU_Memory* memory)
+{
+
+	uint8_t value = memory_read(memory, memory->hl.value);
+
+	set_register_flag(memory, N, true);
+	set_register_flag(memory, H, (value & 0x0F) == 0x0F);
+
+	value++;
+
+	memory_write(memory, memory->hl.value, value);
+	set_register_flag(memory, Z, value == 0x00);
+
+	return 12;
+}
+
+static uint8_t opcode_0x35(CPU_Memory* memory)
+{
+	uint8_t value = memory_read(memory, memory->hl.value);
+
+	set_register_flag(memory, N, true);
+	set_register_flag(memory, H, (value & 0x0F) == 0x00);
+
+	value--;
+
+	memory_write(memory, memory->hl.value, value);
+	set_register_flag(memory, Z, value == 0x00);
+
+	return 12;
+}
+
+static uint8_t opcode_0x36(CPU_Memory* memory)
+{
+	memory_write(memory, memory->hl.value, fetch_byte(memory));
+
+	return 8;
+}
+
+static uint8_t opcode_0x37(CPU_Memory* memory)
+{
+	set_register_flag(memory, N, false);
+	set_register_flag(memory, H, false);
+	set_register_flag(memory, C, true);
+
+	return 8;
+}
+
+static uint8_t opcode_0x38(CPU_Memory* memory)
+{
+	bool c_flag = get_register_flag(memory, C);
+	int8_t jump_value = (int8_t)fetch_byte(memory);
+
+	if (c_flag)
+	{
+		memory->program_counter += jump_value;
+
+		return 12;
+	}
+
+	return 8;
+}
+
+static uint8_t opcode_0x39(CPU_Memory* memory)
+{
+	set_register_flag(memory, N, false);
+	set_register_flag(memory, H, ((memory->hl.value & 0x0FFF) + (memory->stack_pointer & 0x0FFF)) > 0x0FFF);
+	set_register_flag(memory, C, ((uint32_t)memory->hl.value + (uint32_t)memory->stack_pointer) > 0xFFFF);
+
+	memory->hl.value += memory->stack_pointer;
+
+	return 8;
+}
+
+static uint8_t opcode_0x3A(CPU_Memory* memory)
+{
+	memory->af.high = memory_read(memory, memory->hl.value);
+	memory->hl.value--;
+
+	return 8;
+}
+
+static uint8_t opcode_0x3B(CPU_Memory* memory)
+{
+	memory->stack_pointer--;
+
+	return 8;
+}
+
+static uint8_t opcode_0x3C(CPU_Memory* memory)
+{
+	set_register_flag(memory, N, false);
+	set_register_flag(memory, H, (memory->af.high & 0x0F) == 0x0F);
+
+	memory->af.high++;
+
+	set_register_flag(memory, Z, memory->af.high == 0x00);
+
+	return 4;
+}
+
+static uint8_t opcode_0x3D(CPU_Memory* memory)
+{
+	set_register_flag(memory, N, true);
+	set_register_flag(memory, H, (memory->af.high & 0x0F) == 0x00);
+
+	memory->af.high--;
+
+	set_register_flag(memory, Z, memory->af.high == 0x00);
+
+	return 4;
+}
+
+static uint8_t opcode_0x3E(CPU_Memory* memory)
+{
+	memory->af.high = fetch_byte(memory);
+
+	return 8;
+}
+
+static uint8_t opcode_0x3F(CPU_Memory* memory)
+{
+	bool c_flag = get_register_flag(memory, C);
+
+	set_register_flag(memory, N, false);
+	set_register_flag(memory, H, false);
+	set_register_flag(memory, C, !c_flag);
+
+	return 4;
+}
+
 
 uint8_t cpu_step(CPU_Memory* memory)
 {
@@ -712,6 +879,54 @@ uint8_t cpu_step(CPU_Memory* memory)
 			break;
 		case 0x2F:
 			cycles = opcode_0x2F(memory);
+			break;
+		case 0x30:
+			cycles = opcode_0x30(memory);
+			break;
+		case 0x31:
+			cycles = opcode_0x31(memory);
+			break;
+		case 0x32:
+			cycles = opcode_0x32(memory);
+			break;
+		case 0x33:
+			cycles = opcode_0x33(memory);
+			break;
+		case 0x34:
+			cycles = opcode_0x34(memory);
+			break;
+		case 0x35:
+			cycles = opcode_0x35(memory);
+			break;
+		case 0x36:
+			cycles = opcode_0x36(memory);
+			break;
+		case 0x37:
+			cycles = opcode_0x37(memory);
+			break;
+		case 0x38:
+			cycles = opcode_0x38(memory);
+			break;
+		case 0x39:
+			cycles = opcode_0x39(memory);
+			break;
+		case 0x3A:
+			cycles = opcode_0x3A(memory);
+			break;
+		case 0x3B:
+			cycles = opcode_0x3B(memory);
+			break;
+		case 0x3C:
+			cycles = opcode_0x3C(memory);
+			break;
+		case 0x3D:
+			cycles = opcode_0x3D(memory);
+			break;
+		case 0x3E:
+			cycles = opcode_0x3E(memory);
+			break;
+		case 0x3F:
+			cycles = opcode_0x3F(memory);
 			break;
 		default:
 			break;
