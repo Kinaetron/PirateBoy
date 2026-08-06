@@ -2224,6 +2224,266 @@ void test_cpu_step_opcode_0x3F_false(void)
     TEST_ASSERT_EQUAL_UINT16(0x0001, memory->program_counter);
 }
 
+void test_cpu_step_opcode_0x40(void)
+{
+    uint8_t expected_value = 0xE3;
+
+    memory->rom[0x00] = 0x40;
+    memory->bc.high = expected_value;
+    set_all_flags_true();
+
+    TEST_ASSERT_EQUAL_UINT8(4, cpu_step(memory));
+    TEST_ASSERT_EQUAL_UINT8(expected_value, memory->bc.high);
+    TEST_ASSERT_TRUE(get_register_flag(memory, C));
+    TEST_ASSERT_TRUE(get_register_flag(memory, N));
+    TEST_ASSERT_TRUE(get_register_flag(memory, Z));
+    TEST_ASSERT_TRUE(get_register_flag(memory, H));
+}
+
+void test_cpu_step_opcode_0x41(void)
+{
+    uint8_t expected_value = 0x46;
+
+    memory->rom[0x00] = 0x41;
+    memory->bc.low = expected_value;
+    set_all_flags_true();
+
+    TEST_ASSERT_EQUAL_UINT8(4, cpu_step(memory));
+    TEST_ASSERT_EQUAL_UINT8(expected_value, memory->bc.high);
+    TEST_ASSERT_TRUE(get_register_flag(memory, C));
+    TEST_ASSERT_TRUE(get_register_flag(memory, N));
+    TEST_ASSERT_TRUE(get_register_flag(memory, Z));
+    TEST_ASSERT_TRUE(get_register_flag(memory, H));
+}
+
+void test_cpu_step_opcode_0x42(void)
+{
+    uint8_t expected_value = 0x0A;
+
+    memory->rom[0x00] = 0x42;
+    memory->de.high = expected_value;
+    set_all_flags_true();
+
+    TEST_ASSERT_EQUAL_UINT8(4, cpu_step(memory));
+    TEST_ASSERT_EQUAL_UINT8(expected_value, memory->bc.high);
+    TEST_ASSERT_TRUE(get_register_flag(memory, C));
+    TEST_ASSERT_TRUE(get_register_flag(memory, N));
+    TEST_ASSERT_TRUE(get_register_flag(memory, Z));
+    TEST_ASSERT_TRUE(get_register_flag(memory, H));
+}
+
+void test_cpu_step_opcode_0x43(void)
+{
+    uint8_t expected_value = 0x26;
+
+    memory->rom[0x00] = 0x43;
+    memory->de.low = expected_value;
+    set_all_flags_true();
+
+    TEST_ASSERT_EQUAL_UINT8(4, cpu_step(memory));
+    TEST_ASSERT_EQUAL_UINT8(expected_value, memory->bc.high);
+    TEST_ASSERT_TRUE(get_register_flag(memory, C));
+    TEST_ASSERT_TRUE(get_register_flag(memory, N));
+    TEST_ASSERT_TRUE(get_register_flag(memory, Z));
+    TEST_ASSERT_TRUE(get_register_flag(memory, H));
+}
+
+void test_cpu_step_opcode_0x44(void)
+{
+    uint8_t expected_value = 0x89;
+
+    memory->rom[0x00] = 0x44;
+    memory->hl.high = expected_value;
+    set_all_flags_true();
+
+    TEST_ASSERT_EQUAL_UINT8(4, cpu_step(memory));
+    TEST_ASSERT_EQUAL_UINT8(expected_value, memory->bc.high);
+    TEST_ASSERT_TRUE(get_register_flag(memory, C));
+    TEST_ASSERT_TRUE(get_register_flag(memory, N));
+    TEST_ASSERT_TRUE(get_register_flag(memory, Z));
+    TEST_ASSERT_TRUE(get_register_flag(memory, H));
+}
+
+void test_cpu_step_opcode_0x45(void)
+{
+    uint8_t expected_value = 0x5E;
+
+    memory->rom[0x00] = 0x45;
+    memory->hl.low = expected_value;
+    set_all_flags_true();
+
+    TEST_ASSERT_EQUAL_UINT8(4, cpu_step(memory));
+    TEST_ASSERT_EQUAL_UINT8(expected_value, memory->bc.high);
+    TEST_ASSERT_TRUE(get_register_flag(memory, C));
+    TEST_ASSERT_TRUE(get_register_flag(memory, N));
+    TEST_ASSERT_TRUE(get_register_flag(memory, Z));
+    TEST_ASSERT_TRUE(get_register_flag(memory, H));
+}
+
+void test_cpu_step_opcode_0x46(void)
+{
+    uint16_t address = 0xC7A3l;
+    uint8_t expected_value = 0x5E;
+
+    memory->rom[0x00] = 0x46;
+    memory->hl.value = address;
+    memory->wram[address - WRAM_START] = expected_value;
+    set_all_flags_true();
+
+    TEST_ASSERT_EQUAL_UINT8(8, cpu_step(memory));
+    TEST_ASSERT_EQUAL_UINT8(expected_value, memory->bc.high);
+    TEST_ASSERT_TRUE(get_register_flag(memory, C));
+    TEST_ASSERT_TRUE(get_register_flag(memory, N));
+    TEST_ASSERT_TRUE(get_register_flag(memory, Z));
+    TEST_ASSERT_TRUE(get_register_flag(memory, H));
+}
+
+void test_cpu_step_opcode_0x47(void)
+{
+    uint8_t expected_value = 0x94;
+
+    memory->rom[0x00] = 0x47;
+    memory->af.high = expected_value;
+    set_all_flags_true();
+
+    TEST_ASSERT_EQUAL_UINT8(4, cpu_step(memory));
+    TEST_ASSERT_EQUAL_UINT8(expected_value, memory->bc.high);
+    TEST_ASSERT_TRUE(get_register_flag(memory, C));
+    TEST_ASSERT_TRUE(get_register_flag(memory, N));
+    TEST_ASSERT_TRUE(get_register_flag(memory, Z));
+    TEST_ASSERT_TRUE(get_register_flag(memory, H));
+}
+
+void test_cpu_step_opcode_0x48(void)
+{
+    uint8_t expected_value = 0xB3;
+
+    memory->rom[0x00] = 0x48;
+    memory->bc.high = expected_value;
+    set_all_flags_true();
+
+    TEST_ASSERT_EQUAL_UINT8(4, cpu_step(memory));
+    TEST_ASSERT_EQUAL_UINT8(expected_value, memory->bc.low);
+    TEST_ASSERT_TRUE(get_register_flag(memory, C));
+    TEST_ASSERT_TRUE(get_register_flag(memory, N));
+    TEST_ASSERT_TRUE(get_register_flag(memory, Z));
+    TEST_ASSERT_TRUE(get_register_flag(memory, H));
+}
+
+void test_cpu_step_opcode_0x49(void)
+{
+    uint8_t expected_value = 0x84;
+
+    memory->rom[0x00] = 0x49;
+    memory->bc.low = expected_value;
+    set_all_flags_true();
+
+    TEST_ASSERT_EQUAL_UINT8(4, cpu_step(memory));
+    TEST_ASSERT_EQUAL_UINT8(expected_value, memory->bc.low);
+    TEST_ASSERT_TRUE(get_register_flag(memory, C));
+    TEST_ASSERT_TRUE(get_register_flag(memory, N));
+    TEST_ASSERT_TRUE(get_register_flag(memory, Z));
+    TEST_ASSERT_TRUE(get_register_flag(memory, H));
+}
+
+void test_cpu_step_opcode_0x4A(void)
+{
+    uint8_t expected_value = 0xBC;
+
+    memory->rom[0x00] = 0x4A;
+    memory->de.high = expected_value;
+    set_all_flags_true();
+
+    TEST_ASSERT_EQUAL_UINT8(4, cpu_step(memory));
+    TEST_ASSERT_EQUAL_UINT8(expected_value, memory->bc.low);
+    TEST_ASSERT_TRUE(get_register_flag(memory, C));
+    TEST_ASSERT_TRUE(get_register_flag(memory, N));
+    TEST_ASSERT_TRUE(get_register_flag(memory, Z));
+    TEST_ASSERT_TRUE(get_register_flag(memory, H));
+}
+
+void test_cpu_step_opcode_0x4B(void)
+{
+    uint8_t expected_value = 0x76;
+
+    memory->rom[0x00] = 0x4B;
+    memory->de.low = expected_value;
+    set_all_flags_true();
+
+    TEST_ASSERT_EQUAL_UINT8(4, cpu_step(memory));
+    TEST_ASSERT_EQUAL_UINT8(expected_value, memory->bc.low);
+    TEST_ASSERT_TRUE(get_register_flag(memory, C));
+    TEST_ASSERT_TRUE(get_register_flag(memory, N));
+    TEST_ASSERT_TRUE(get_register_flag(memory, Z));
+    TEST_ASSERT_TRUE(get_register_flag(memory, H));
+}
+
+void test_cpu_step_opcode_0x4C(void)
+{
+    uint8_t expected_value = 0x78;
+
+    memory->rom[0x00] = 0x4C;
+    memory->hl.high = expected_value;
+    set_all_flags_true();
+
+    TEST_ASSERT_EQUAL_UINT8(4, cpu_step(memory));
+    TEST_ASSERT_EQUAL_UINT8(expected_value, memory->bc.low);
+    TEST_ASSERT_TRUE(get_register_flag(memory, C));
+    TEST_ASSERT_TRUE(get_register_flag(memory, N));
+    TEST_ASSERT_TRUE(get_register_flag(memory, Z));
+    TEST_ASSERT_TRUE(get_register_flag(memory, H));
+}
+
+void test_cpu_step_opcode_0x4D(void)
+{
+    uint8_t expected_value = 0x63;
+
+    memory->rom[0x00] = 0x4D;
+    memory->hl.low = expected_value;
+    set_all_flags_true();
+
+    TEST_ASSERT_EQUAL_UINT8(4, cpu_step(memory));
+    TEST_ASSERT_EQUAL_UINT8(expected_value, memory->bc.low);
+    TEST_ASSERT_TRUE(get_register_flag(memory, C));
+    TEST_ASSERT_TRUE(get_register_flag(memory, N));
+    TEST_ASSERT_TRUE(get_register_flag(memory, Z));
+    TEST_ASSERT_TRUE(get_register_flag(memory, H));
+}
+
+void test_cpu_step_opcode_0x4E(void)
+{
+    uint16_t address = 0xCE5D;
+    uint8_t expected_value = 0x70;
+
+    memory->rom[0x00] = 0x4E;
+    memory->hl.value = address;
+    memory->wram[address - WRAM_START] = expected_value;
+    set_all_flags_true();
+
+    TEST_ASSERT_EQUAL_UINT8(8, cpu_step(memory));
+    TEST_ASSERT_EQUAL_UINT8(expected_value, memory->bc.low);
+    TEST_ASSERT_TRUE(get_register_flag(memory, C));
+    TEST_ASSERT_TRUE(get_register_flag(memory, N));
+    TEST_ASSERT_TRUE(get_register_flag(memory, Z));
+    TEST_ASSERT_TRUE(get_register_flag(memory, H));
+}
+
+void test_cpu_step_opcode_0x4F(void)
+{
+    uint8_t expected_value = 0xD4;
+
+    memory->rom[0x00] = 0x4F;
+    memory->af.high = expected_value;
+    set_all_flags_true();
+
+    TEST_ASSERT_EQUAL_UINT8(4, cpu_step(memory));
+    TEST_ASSERT_EQUAL_UINT8(expected_value, memory->bc.low);
+    TEST_ASSERT_TRUE(get_register_flag(memory, C));
+    TEST_ASSERT_TRUE(get_register_flag(memory, N));
+    TEST_ASSERT_TRUE(get_register_flag(memory, Z));
+    TEST_ASSERT_TRUE(get_register_flag(memory, H));
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -2354,6 +2614,22 @@ int main(void)
     RUN_TEST(test_cpu_step_opcode_0x3E);
     RUN_TEST(test_cpu_step_opcode_0x3F_true);
     RUN_TEST(test_cpu_step_opcode_0x3F_false);
+    RUN_TEST(test_cpu_step_opcode_0x40);
+    RUN_TEST(test_cpu_step_opcode_0x41);
+    RUN_TEST(test_cpu_step_opcode_0x42);
+    RUN_TEST(test_cpu_step_opcode_0x43);
+    RUN_TEST(test_cpu_step_opcode_0x44);
+    RUN_TEST(test_cpu_step_opcode_0x45);
+    RUN_TEST(test_cpu_step_opcode_0x46);
+    RUN_TEST(test_cpu_step_opcode_0x47);
+    RUN_TEST(test_cpu_step_opcode_0x48);
+    RUN_TEST(test_cpu_step_opcode_0x49);
+    RUN_TEST(test_cpu_step_opcode_0x4A);
+    RUN_TEST(test_cpu_step_opcode_0x4B);
+    RUN_TEST(test_cpu_step_opcode_0x4C);
+    RUN_TEST(test_cpu_step_opcode_0x4D);
+    RUN_TEST(test_cpu_step_opcode_0x4E);
+    RUN_TEST(test_cpu_step_opcode_0x4F);
 
     return UNITY_END();
 }
