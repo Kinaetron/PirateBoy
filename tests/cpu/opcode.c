@@ -1464,7 +1464,7 @@ void test_cpu_step_opcode_0x28_zflag_false(void)
     set_register_flag(memory, Z, false);
 
     TEST_ASSERT_EQUAL_UINT8(8, cpu_step(memory));
-    TEST_ASSERT_EQUAL_UINT16(0x0006, memory->program_counter);
+    TEST_ASSERT_EQUAL_UINT16(0x0007, memory->program_counter);
     TEST_ASSERT_TRUE(get_register_flag(memory, C));
     TEST_ASSERT_TRUE(get_register_flag(memory, N));
     TEST_ASSERT_FALSE(get_register_flag(memory, Z));
@@ -1986,7 +1986,7 @@ void test_cpu_step_opcode_0x38_cflag_false(void)
     set_register_flag(memory, Z, true);
 
     TEST_ASSERT_EQUAL_UINT8(8, cpu_step(memory));
-    TEST_ASSERT_EQUAL_UINT16(0x0006, memory->program_counter);
+    TEST_ASSERT_EQUAL_UINT16(0x0007, memory->program_counter);
     TEST_ASSERT_FALSE(get_register_flag(memory, C));
     TEST_ASSERT_TRUE(get_register_flag(memory, N));
     TEST_ASSERT_TRUE(get_register_flag(memory, Z));
