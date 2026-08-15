@@ -1174,6 +1174,233 @@ static uint8_t opcode_0x7F(CPU_Memory* memory)
 	return 4;
 }
 
+static uint8_t opcode_0x80(CPU_Memory* memory)
+{
+	set_register_flag(memory, N, false);
+	set_register_flag(memory, H, ((memory->af.high & 0x0F) + (memory->bc.high & 0x0F)) > 0x0F);
+	set_register_flag(memory, C, ((uint16_t)memory->af.high + memory->bc.high) > 0xFF);
+
+	memory->af.high += memory->bc.high;
+
+	set_register_flag(memory, Z, memory->af.high == 0);
+
+	return 4;
+}
+
+static uint8_t opcode_0x81(CPU_Memory* memory)
+{
+	set_register_flag(memory, N, false);
+	set_register_flag(memory, H, ((memory->af.high & 0x0F) + (memory->bc.low & 0x0F)) > 0x0F);
+	set_register_flag(memory, C, ((uint16_t)memory->af.high + memory->bc.low) > 0xFF);
+
+	memory->af.high += memory->bc.low;
+
+	set_register_flag(memory, Z, memory->af.high == 0);
+
+	return 4;
+}
+
+static uint8_t opcode_0x82(CPU_Memory* memory)
+{
+	set_register_flag(memory, N, false);
+	set_register_flag(memory, H, ((memory->af.high & 0x0F) + (memory->de.high & 0x0F)) > 0x0F);
+	set_register_flag(memory, C, ((uint16_t)memory->af.high + memory->de.high) > 0xFF);
+
+	memory->af.high += memory->de.high;
+
+	set_register_flag(memory, Z, memory->af.high == 0);
+
+	return 4;
+}
+
+static uint8_t opcode_0x83(CPU_Memory* memory)
+{
+	set_register_flag(memory, N, false);
+	set_register_flag(memory, H, ((memory->af.high & 0x0F) + (memory->de.low & 0x0F)) > 0x0F);
+	set_register_flag(memory, C, ((uint16_t)memory->af.high + memory->de.low) > 0xFF);
+
+	memory->af.high += memory->de.low;
+
+	set_register_flag(memory, Z, memory->af.high == 0);
+
+	return 4;
+}
+
+static uint8_t opcode_0x84(CPU_Memory* memory)
+{
+	set_register_flag(memory, N, false);
+	set_register_flag(memory, H, ((memory->af.high & 0x0F) + (memory->hl.high & 0x0F)) > 0x0F);
+	set_register_flag(memory, C, ((uint16_t)memory->af.high + memory->hl.high) > 0xFF);
+
+	memory->af.high += memory->hl.high;
+
+	set_register_flag(memory, Z, memory->af.high == 0);
+
+	return 4;
+}
+
+static uint8_t opcode_0x85(CPU_Memory* memory)
+{
+	set_register_flag(memory, N, false);
+	set_register_flag(memory, H, ((memory->af.high & 0x0F) + (memory->hl.low & 0x0F)) > 0x0F);
+	set_register_flag(memory, C, ((uint16_t)memory->af.high + memory->hl.low) > 0xFF);
+
+	memory->af.high += memory->hl.low;
+
+	set_register_flag(memory, Z, memory->af.high == 0);
+
+	return 4;
+}
+
+static uint8_t opcode_0x86(CPU_Memory* memory)
+{
+	uint8_t memory_value = memory_read(memory, memory->hl.value);
+
+	set_register_flag(memory, N, false);
+	set_register_flag(memory, H, ((memory->af.high & 0x0F) + (memory_value & 0x0F)) > 0x0F);
+	set_register_flag(memory, C, ((uint16_t)memory->af.high + memory_value) > 0xFF);
+
+	memory->af.high += memory_value;
+
+	set_register_flag(memory, Z, memory->af.high == 0);
+
+	return 4;
+}
+
+static uint8_t opcode_0x87(CPU_Memory* memory)
+{
+	set_register_flag(memory, N, false);
+	set_register_flag(memory, H, ((memory->af.high & 0x0F) + (memory->af.high & 0x0F)) > 0x0F);
+	set_register_flag(memory, C, ((uint16_t)memory->af.high + memory->af.high) > 0xFF);
+
+	memory->af.high += memory->af.high;
+
+	set_register_flag(memory, Z, memory->af.high == 0);
+
+	return 4;
+}
+
+static uint8_t opcode_0x88(CPU_Memory* memory)
+{
+	uint8_t c_flag = (uint8_t)get_register_flag(memory, C);
+
+	set_register_flag(memory, N, false);
+	set_register_flag(memory, H, ((memory->af.high & 0x0F) + (memory->bc.high & 0x0F) + c_flag) > 0x0F);
+	set_register_flag(memory, C, ((uint16_t)memory->af.high + memory->bc.high + c_flag) > 0xFF);
+
+	memory->af.high += memory->bc.high + c_flag;
+
+	set_register_flag(memory, Z, memory->af.high == 0);
+
+	return 4;
+}
+
+static uint8_t opcode_0x89(CPU_Memory* memory)
+{
+	uint8_t c_flag = (uint8_t)get_register_flag(memory, C);
+
+	set_register_flag(memory, N, false);
+	set_register_flag(memory, H, ((memory->af.high & 0x0F) + (memory->bc.low & 0x0F) + c_flag) > 0x0F);
+	set_register_flag(memory, C, ((uint16_t)memory->af.high + memory->bc.low + c_flag) > 0xFF);
+
+	memory->af.high += memory->bc.low + c_flag;
+
+	set_register_flag(memory, Z, memory->af.high == 0);
+
+	return 4;
+}
+
+static uint8_t opcode_0x8A(CPU_Memory* memory)
+{
+	uint8_t c_flag = (uint8_t)get_register_flag(memory, C);
+
+	set_register_flag(memory, N, false);
+	set_register_flag(memory, H, ((memory->af.high & 0x0F) + (memory->de.high & 0x0F) + c_flag) > 0x0F);
+	set_register_flag(memory, C, ((uint16_t)memory->af.high + memory->de.high + c_flag) > 0xFF);
+
+	memory->af.high += memory->de.high + c_flag;
+
+	set_register_flag(memory, Z, memory->af.high == 0);
+
+	return 4;
+}
+
+static uint8_t opcode_0x8B(CPU_Memory* memory)
+{
+	uint8_t c_flag = (uint8_t)get_register_flag(memory, C);
+
+	set_register_flag(memory, N, false);
+	set_register_flag(memory, H, ((memory->af.high & 0x0F) + (memory->de.low & 0x0F) + c_flag) > 0x0F);
+	set_register_flag(memory, C, ((uint16_t)memory->af.high + memory->de.low + c_flag) > 0xFF);
+
+	memory->af.high += memory->de.low + c_flag;
+
+	set_register_flag(memory, Z, memory->af.high == 0);
+
+	return 4;
+}
+
+static uint8_t opcode_0x8C(CPU_Memory* memory)
+{
+	uint8_t c_flag = (uint8_t)get_register_flag(memory, C);
+
+	set_register_flag(memory, N, false);
+	set_register_flag(memory, H, ((memory->af.high & 0x0F) + (memory->hl.high & 0x0F) + c_flag) > 0x0F);
+	set_register_flag(memory, C, ((uint16_t)memory->af.high + memory->hl.high + c_flag) > 0xFF);
+
+	memory->af.high += memory->hl.high + c_flag;
+
+	set_register_flag(memory, Z, memory->af.high == 0);
+
+	return 4;
+}
+
+static uint8_t opcode_0x8D(CPU_Memory* memory)
+{
+	uint8_t c_flag = (uint8_t)get_register_flag(memory, C);
+
+	set_register_flag(memory, N, false);
+	set_register_flag(memory, H, ((memory->af.high & 0x0F) + (memory->hl.low & 0x0F) + c_flag) > 0x0F);
+	set_register_flag(memory, C, ((uint16_t)memory->af.high + memory->hl.low + c_flag) > 0xFF);
+
+	memory->af.high += memory->hl.low + c_flag;
+
+	set_register_flag(memory, Z, memory->af.high == 0);
+
+	return 4;
+}
+
+static uint8_t opcode_0x8E(CPU_Memory* memory)
+{
+	uint8_t c_flag = (uint8_t)get_register_flag(memory, C);
+	uint8_t memory_value = memory_read(memory, memory->hl.value);
+
+	set_register_flag(memory, N, false);
+	set_register_flag(memory, H, ((memory->af.high & 0x0F) + (memory_value & 0x0F) + c_flag) > 0x0F);
+	set_register_flag(memory, C, ((uint16_t)memory->af.high + memory_value + c_flag) > 0xFF);
+
+	memory->af.high += memory_value + c_flag;
+
+	set_register_flag(memory, Z, memory->af.high == 0);
+
+	return 8;
+}
+
+static uint8_t opcode_0x8F(CPU_Memory* memory)
+{
+	uint8_t c_flag = (uint8_t)get_register_flag(memory, C);
+
+	set_register_flag(memory, N, false);
+	set_register_flag(memory, H, ((memory->af.high & 0x0F) + (memory->af.high & 0x0F) + c_flag) > 0x0F);
+	set_register_flag(memory, C, ((uint16_t)memory->af.high + memory->af.high + c_flag) > 0xFF);
+
+	memory->af.high += memory->af.high + c_flag;
+
+	set_register_flag(memory, Z, memory->af.high == 0);
+
+	return 4;
+}
+
 uint8_t cpu_step(CPU_Memory* memory)
 {
 	uint8_t opcode = fetch_byte(memory);
@@ -1557,6 +1784,54 @@ uint8_t cpu_step(CPU_Memory* memory)
 			break;
 		case 0x7F:
 			cycles = opcode_0x7F(memory);
+			break;
+		case 0x80:
+			cycles = opcode_0x80(memory);
+			break;
+		case 0x81:
+			cycles = opcode_0x81(memory);
+			break;
+		case 0x82:
+			cycles = opcode_0x82(memory);
+			break;
+		case 0x83:
+			cycles = opcode_0x83(memory);
+			break;
+		case 0x84:
+			cycles = opcode_0x84(memory);
+			break;
+		case 0x85:
+			cycles = opcode_0x85(memory);
+			break;
+		case 0x86:
+			cycles = opcode_0x86(memory);
+			break;
+		case 0x87:
+			cycles = opcode_0x87(memory);
+			break;
+		case 0x88:
+			cycles = opcode_0x88(memory);
+			break;
+		case 0x89:
+			cycles = opcode_0x89(memory);
+			break;
+		case 0x8A:
+			cycles = opcode_0x8A(memory);
+			break;
+		case 0x8B:
+			cycles = opcode_0x8B(memory);
+			break;
+		case 0x8C:
+			cycles = opcode_0x8C(memory);
+			break;
+		case 0x8D:
+			cycles = opcode_0x8D(memory);
+			break;
+		case 0x8E:
+			cycles = opcode_0x8E(memory);
+			break;
+		case 0x8F:
+			cycles = opcode_0x8F(memory);
 			break;
 		default:
 			break;
