@@ -1401,6 +1401,19 @@ static uint8_t opcode_0x8F(CPU_Memory* memory)
 	return 4;
 }
 
+static uint8_t opcode_0x90(CPU_Memory* memory)
+{
+	set_register_flag(memory, N, true);
+	set_register_flag(memory, H, (memory->bc.high & 0x0F) > (memory->af.high & 0x0F));
+	set_register_flag(memory, C, memory->bc.high > memory->af.high);
+
+	memory->af.high -= memory->bc.high;
+
+	set_register_flag(memory, Z, memory->af.high == 0);
+
+	return 4;
+}
+
 uint8_t cpu_step(CPU_Memory* memory)
 {
 	uint8_t opcode = fetch_byte(memory);
@@ -1832,6 +1845,9 @@ uint8_t cpu_step(CPU_Memory* memory)
 			break;
 		case 0x8F:
 			cycles = opcode_0x8F(memory);
+			break;
+		case 0x90:
+			cycles = opcode_0x90(memory);
 			break;
 		default:
 			break;
