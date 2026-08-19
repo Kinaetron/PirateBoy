@@ -70,25 +70,25 @@ static void set_register_flag(CPU_Memory* memory, Flag flag, bool value)
 	memory->af.low &= 0xF0;
 }
 
-static uint8_t fetch_byte(CPU_Memory* memory)
+static uint8_t fetch_byte(CPU_Memory* memory, uint16_t* address)
 {
-	uint8_t value = memory_read(memory, memory->program_counter);
-	memory->program_counter++;
+	uint8_t value = memory_read(memory, *address);
+	*address = *address + 1;
 	return value;
 }
 
-static memory16 fetch_two_bytes(CPU_Memory* memory)
+static memory16 fetch_two_bytes(CPU_Memory* memory, uint16_t* address)
 {
 	memory16 result;
-	result.low = fetch_byte(memory);
-	result.high = fetch_byte(memory);
+	result.low = fetch_byte(memory, address);
+	result.high = fetch_byte(memory, address);
 
 	return result;
 }
 
 static uint8_t opcode_0x01(CPU_Memory* memory)
 {
-	memory->bc.value = fetch_two_bytes(memory).value;
+	memory->bc.value = fetch_two_bytes(memory, &memory->program_counter).value;
 
 	return 12;
 }
@@ -134,7 +134,7 @@ static uint8_t opcode_0x05(CPU_Memory* memory)
 
 static uint8_t opcode_0x06(CPU_Memory* memory)
 {
-	uint8_t high_byte = fetch_byte(memory);
+	uint8_t high_byte = fetch_byte(memory, &memory->program_counter);
 	memory->bc.high = high_byte;
 
 	return 8;
@@ -155,7 +155,7 @@ static uint8_t opcode_0x07(CPU_Memory* memory)
 
 static uint8_t opcode_0x08(CPU_Memory* memory)
 {
-	memory16 address = fetch_two_bytes(memory);
+	memory16 address = fetch_two_bytes(memory, &memory->program_counter);
 	memory16 stack_pointer;
 	stack_pointer.value = memory->stack_pointer;
 
@@ -216,7 +216,7 @@ static uint8_t opcode_0x0D(CPU_Memory* memory)
 
 static uint8_t opcode_0x0E(CPU_Memory* memory)
 {
-	memory->bc.low = fetch_byte(memory);
+	memory->bc.low = fetch_byte(memory, &memory->program_counter);
 
 	return 8;
 }
@@ -236,7 +236,7 @@ static uint8_t opcode_0x0F(CPU_Memory* memory)
 
 static uint8_t opcode_0x11(CPU_Memory* memory)
 {
-	memory->de.value = fetch_two_bytes(memory).value;
+	memory->de.value = fetch_two_bytes(memory, &memory->program_counter).value;
 	return 12;
 }
 
@@ -280,7 +280,7 @@ static uint8_t opcode_0x15(CPU_Memory* memory)
 
 static uint8_t opcode_0x16(CPU_Memory* memory)
 {
-	memory->de.high = fetch_byte(memory);
+	memory->de.high = fetch_byte(memory, &memory->program_counter);
 
 	return 8;
 }
@@ -302,7 +302,7 @@ static uint8_t opcode_0x17(CPU_Memory* memory)
 
 static uint8_t opcode_0x18(CPU_Memory* memory)
 {
-	int8_t jump_value = (int8_t)fetch_byte(memory);
+	int8_t jump_value = (int8_t)fetch_byte(memory, &memory->program_counter);
 	memory->program_counter += jump_value;
 
 	return 12;
@@ -359,7 +359,7 @@ static uint8_t opcode_0x1D(CPU_Memory* memory)
 
 static uint8_t opcode_0x1E(CPU_Memory* memory)
 {
-	memory->de.low = fetch_byte(memory);
+	memory->de.low = fetch_byte(memory, &memory->program_counter);
 
 	return 8;
 }
@@ -382,7 +382,7 @@ static uint8_t opcode_0x1F(CPU_Memory* memory)
 static uint8_t opcode_0x20(CPU_Memory* memory)
 {
 	bool z_flag = get_register_flag(memory, Z);
-	int8_t value = (int8_t)fetch_byte(memory);
+	int8_t value = (int8_t)fetch_byte(memory, &memory->program_counter);
 
 	if (!z_flag)
 	{
@@ -395,7 +395,7 @@ static uint8_t opcode_0x20(CPU_Memory* memory)
 
 static uint8_t opcode_0x21(CPU_Memory* memory)
 {
-	memory->hl.value = fetch_two_bytes(memory).value;
+	memory->hl.value = fetch_two_bytes(memory, &memory->program_counter).value;
 
 	return 12;
 }
@@ -441,7 +441,7 @@ static uint8_t opcode_0x25(CPU_Memory* memory)
 
 static uint8_t opcode_0x26(CPU_Memory* memory)
 {
-	memory->hl.high = fetch_byte(memory);
+	memory->hl.high = fetch_byte(memory, &memory->program_counter);
 
 	return 8;
 }
@@ -487,7 +487,7 @@ static uint8_t opcode_0x27(CPU_Memory* memory)
 static uint8_t opcode_0x28(CPU_Memory* memory)
 {
 	bool z_flag = get_register_flag(memory, Z);
-	int8_t jump_value = (int8_t)fetch_byte(memory);
+	int8_t jump_value = (int8_t)fetch_byte(memory, &memory->program_counter);
 
 	if (z_flag)
 	{
@@ -551,7 +551,7 @@ static uint8_t opcode_0x2D(CPU_Memory* memory)
 
 static uint8_t opcode_0x2E(CPU_Memory* memory)
 {
-	memory->hl.low = fetch_byte(memory);
+	memory->hl.low = fetch_byte(memory, &memory->program_counter);
 
 	return 8;
 }
@@ -569,7 +569,7 @@ static uint8_t opcode_0x2F(CPU_Memory* memory)
 static uint8_t opcode_0x30(CPU_Memory* memory)
 {
 	bool c_flag = get_register_flag(memory, C);
-	int8_t value = (int8_t)fetch_byte(memory);
+	int8_t value = (int8_t)fetch_byte(memory, &memory->program_counter);
 
 	if (!c_flag)
 	{
@@ -582,7 +582,7 @@ static uint8_t opcode_0x30(CPU_Memory* memory)
 
 static uint8_t opcode_0x31(CPU_Memory* memory)
 {
-	memory->stack_pointer = fetch_two_bytes(memory).value;
+	memory->stack_pointer = fetch_two_bytes(memory, &memory->program_counter).value;
 
 	return 12;
 }
@@ -635,7 +635,8 @@ static uint8_t opcode_0x35(CPU_Memory* memory)
 
 static uint8_t opcode_0x36(CPU_Memory* memory)
 {
-	memory_write(memory, memory->hl.value, fetch_byte(memory));
+	memory_write(memory, memory->hl.value, 
+		fetch_byte(memory, &memory->program_counter));
 
 	return 8;
 }
@@ -652,7 +653,7 @@ static uint8_t opcode_0x37(CPU_Memory* memory)
 static uint8_t opcode_0x38(CPU_Memory* memory)
 {
 	bool c_flag = get_register_flag(memory, C);
-	int8_t jump_value = (int8_t)fetch_byte(memory);
+	int8_t jump_value = (int8_t)fetch_byte(memory, &memory->program_counter);
 
 	if (c_flag)
 	{
@@ -716,7 +717,7 @@ static uint8_t opcode_0x3D(CPU_Memory* memory)
 
 static uint8_t opcode_0x3E(CPU_Memory* memory)
 {
-	memory->af.high = fetch_byte(memory);
+	memory->af.high = fetch_byte(memory, &memory->program_counter);
 
 	return 8;
 }
@@ -2043,9 +2044,24 @@ static uint8_t opcode_0xBF(CPU_Memory* memory)
 	return 4;
 }
 
+static uint8_t opcode_0xC0(CPU_Memory* memory)
+{
+	bool z_flag = get_register_flag(memory, Z);
+
+	if (!z_flag)
+	{
+		uint16_t memory_value = fetch_two_bytes(memory, &memory->stack_pointer).value;
+		memory->program_counter = memory_value;
+
+		return 20;
+	}
+
+	return 8;
+}
+
 uint8_t cpu_step(CPU_Memory* memory)
 {
-	uint8_t opcode = fetch_byte(memory);
+	uint8_t opcode = fetch_byte(memory, &memory->program_counter);
 	uint8_t cycles = 4;
 
 	switch (opcode)
