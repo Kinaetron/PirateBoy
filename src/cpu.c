@@ -86,6 +86,12 @@ static memory16 fetch_two_bytes(CPU_Memory* memory, uint16_t* address)
 	return result;
 }
 
+static void write_byte(CPU_Memory* memory, uint16_t* address, uint8_t data)
+{
+	*address = *address - 1;
+	memory_write(memory, *address, data);
+}
+
 static uint8_t opcode_0x01(CPU_Memory* memory)
 {
 	memory->bc.value = fetch_two_bytes(memory, &memory->program_counter).value;
@@ -303,7 +309,7 @@ static uint8_t opcode_0x17(CPU_Memory* memory)
 static uint8_t opcode_0x18(CPU_Memory* memory)
 {
 	int8_t jump_value = (int8_t)fetch_byte(memory, &memory->program_counter);
-	memory->program_counter += jump_value;
+	memory->program_counter.value += jump_value;
 
 	return 12;
 }
@@ -386,7 +392,7 @@ static uint8_t opcode_0x20(CPU_Memory* memory)
 
 	if (!z_flag)
 	{
-		memory->program_counter += value;
+		memory->program_counter.value += value;
 		return 12;
 	}
 
@@ -491,7 +497,7 @@ static uint8_t opcode_0x28(CPU_Memory* memory)
 
 	if (z_flag)
 	{
-		memory->program_counter += jump_value;
+		memory->program_counter.value += jump_value;
 
 		return 12;
 	}
@@ -573,7 +579,7 @@ static uint8_t opcode_0x30(CPU_Memory* memory)
 
 	if (!c_flag)
 	{
-		memory->program_counter += value;
+		memory->program_counter.value += value;
 		return 12;
 	}
 
@@ -657,7 +663,7 @@ static uint8_t opcode_0x38(CPU_Memory* memory)
 
 	if (c_flag)
 	{
-		memory->program_counter += jump_value;
+		memory->program_counter.value += jump_value;
 
 		return 12;
 	}
@@ -2051,12 +2057,182 @@ static uint8_t opcode_0xC0(CPU_Memory* memory)
 	if (!z_flag)
 	{
 		uint16_t memory_value = fetch_two_bytes(memory, &memory->stack_pointer).value;
-		memory->program_counter = memory_value;
+		memory->program_counter.value = memory_value;
 
 		return 20;
 	}
 
 	return 8;
+}
+
+static uint8_t opcode_0xC1(CPU_Memory* memory)
+{
+	memory->bc.value = fetch_two_bytes(memory, &memory->stack_pointer).value;
+
+	return 12;
+}
+
+static uint8_t opcode_0xC2(CPU_Memory* memory)
+{
+	bool z_flag = get_register_flag(memory, Z);
+	uint16_t memory_value = fetch_two_bytes(memory, &memory->program_counter).value;
+
+	if (!z_flag)
+	{
+		memory->program_counter.value = memory_value;
+		return 16;
+	}
+
+	return 12;
+}
+
+static uint8_t opcode_0xC3(CPU_Memory* memory)
+{
+	memory->program_counter.value = fetch_two_bytes(memory, &memory->program_counter).value;
+
+	return 16;
+}
+
+static uint8_t opcode_0xC4(CPU_Memory* memory)
+{
+	bool z_flag = get_register_flag(memory, Z);
+	memory16 jump_target = fetch_two_bytes(memory, &memory->program_counter);
+
+	if (!z_flag)
+	{
+		write_byte(memory, &memory->stack_pointer, jump_target.high);
+		write_byte(memory, &memory->stack_pointer, jump_target.low);
+
+		memory->program_counter.value = jump_target.value;
+
+		return 24;
+	}
+
+	return 12;
+}
+
+static uint8_t opcode_0xC5(CPU_Memory* memory)
+{
+	write_byte(memory, &memory->stack_pointer, memory->bc.high);
+	write_byte(memory, &memory->stack_pointer, memory->bc.low);
+
+	return 16;
+}
+
+static uint8_t opcode_0xC6(CPU_Memory* memory)
+{
+	uint8_t byte_value = fetch_byte(memory, &memory->program_counter);
+
+	set_register_flag(memory, N, false);
+	set_register_flag(memory, H, ((memory->af.high & 0x0F) + (byte_value & 0x0F)) > 0x0F);
+	set_register_flag(memory, C, ((uint16_t)memory->af.high + byte_value) > 0xFF);
+
+	memory->af.high += byte_value;
+
+	set_register_flag(memory, Z, memory->af.high == 0);
+
+	return 8;
+}
+
+static uint8_t opcode_0xC7(CPU_Memory* memory)
+{
+	write_byte(memory, &memory->stack_pointer, memory->program_counter.high);
+	write_byte(memory, &memory->stack_pointer, memory->program_counter.low);
+	memory->program_counter.value = 0x0000;
+
+	return 16;
+}
+
+static uint8_t opcode_0xC8(CPU_Memory* memory)
+{
+	bool z_flag = get_register_flag(memory, Z);
+
+	if (z_flag)
+	{
+		uint16_t memory_value = fetch_two_bytes(memory, &memory->stack_pointer).value;
+		memory->program_counter.value = memory_value;
+
+		return 20;
+	}
+
+	return 8;
+}
+
+static uint8_t opcode_0xC9(CPU_Memory* memory)
+{
+	uint16_t memory_value = fetch_two_bytes(memory, &memory->stack_pointer).value;
+	memory->program_counter.value = memory_value;
+
+	return 16;
+}
+
+static uint8_t opcode_0xCA(CPU_Memory* memory)
+{
+	bool z_flag = get_register_flag(memory, Z);
+	memory16 memory_value = fetch_two_bytes(memory, &memory->program_counter);
+
+	if (z_flag)
+	{
+		memory->program_counter = memory_value;
+		return 16;
+	}
+
+	return 12;
+}
+
+static uint8_t opcode_0xCC(CPU_Memory* memory)
+{
+	bool z_flag = get_register_flag(memory, Z);
+	memory16 jump_target = fetch_two_bytes(memory, &memory->program_counter);
+
+	if (z_flag)
+	{
+		write_byte(memory, &memory->stack_pointer, jump_target.high);
+		write_byte(memory, &memory->stack_pointer, jump_target.low);
+
+		memory->program_counter.value = jump_target.value;
+
+		return 24;
+	}
+
+	return 12;
+}
+
+static uint8_t opcode_0xCD(CPU_Memory* memory)
+{
+	memory16 jump_target = fetch_two_bytes(memory, &memory->program_counter);
+
+	write_byte(memory, &memory->stack_pointer, jump_target.high);
+	write_byte(memory, &memory->stack_pointer, jump_target.low);
+
+	memory->program_counter.value = jump_target.value;
+
+	return 24;
+}
+
+static uint8_t opcode_0xCE(CPU_Memory* memory)
+{
+	uint8_t c_flag = (uint8_t)get_register_flag(memory, C);
+	uint8_t memory_value = fetch_byte(memory, &memory->program_counter.value);
+
+	set_register_flag(memory, N, false);
+	set_register_flag(memory, H, ((memory->af.high & 0x0F) + (memory_value & 0x0F) + c_flag) > 0x0F);
+	set_register_flag(memory, C, ((uint16_t)memory->af.high + memory_value + c_flag) > 0xFF);
+
+	memory->af.high += memory_value + c_flag;
+
+	set_register_flag(memory, Z, memory->af.high == 0);
+
+	return 8;
+}
+
+static uint8_t opcode_0xCF(CPU_Memory* memory)
+{
+	write_byte(memory, &memory->stack_pointer, memory->program_counter.high);
+	write_byte(memory, &memory->stack_pointer, memory->program_counter.low);
+	memory->program_counter.value = 0x0800;
+
+	return 16;
 }
 
 uint8_t cpu_step(CPU_Memory* memory)
@@ -2634,6 +2810,51 @@ uint8_t cpu_step(CPU_Memory* memory)
 			break;
 		case 0xBF:
 			cycles = opcode_0xBF(memory);
+			break;
+		case 0xC0:
+			cycles = opcode_0xC0(memory);
+			break;
+		case 0xC1:
+			cycles = opcode_0xC1(memory);
+			break;
+		case 0xC2:
+			cycles = opcode_0xC2(memory);
+			break;
+		case 0xC3:
+			cycles = opcode_0xC3(memory);
+			break;
+		case 0xC4:
+			cycles = opcode_0xC4(memory);
+			break;
+		case 0xC5:
+			cycles = opcode_0xC5(memory);
+			break;
+		case 0xC6:
+			cycles = opcode_0xC6(memory);
+			break;
+		case 0xC7:
+			cycles = opcode_0xC7(memory);
+			break;
+		case 0xC8:
+			cycles = opcode_0xC8(memory);
+			break;
+		case 0xC9:
+			cycles = opcode_0xC9(memory);
+			break;
+		case 0xCA:
+			cycles = opcode_0xCA(memory);
+			break;
+		case 0xCC:
+			cycles = opcode_0xCC(memory);
+			break;
+		case 0xCD:
+			cycles = opcode_0xCD(memory);
+			break;
+		case 0xCE:
+			cycles = opcode_0xCE(memory);
+			break;
+		case 0xCF:
+			cycles = opcode_0xCF(memory);
 			break;
 		default:
 			break;

@@ -43,7 +43,7 @@ typedef union
 		uint8_t low;
 		uint8_t high;
 	};
-} Register16;
+} memory16;
 
 typedef struct
 {
@@ -54,13 +54,13 @@ typedef struct
 	uint8_t hram[HRAM_SIZE];
 	uint8_t interrupt_enable;
 
-	Register16 af;
-	Register16 bc;
-	Register16 de;
-	Register16 hl;
+	memory16 af;
+	memory16 bc;
+	memory16 de;
+	memory16 hl;
 
 	uint16_t stack_pointer;
-	uint16_t program_counter;
+	memory16 program_counter;
 } CPU_Memory;
 
 #endif
