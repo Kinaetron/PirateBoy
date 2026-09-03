@@ -2037,7 +2037,7 @@ static uint8_t opcode_0xBE(CPU_Memory* memory)
 
 	set_register_flag(memory, Z, compare_value == 0);
 
-	return 4;
+	return 8;
 }
 
 static uint8_t opcode_0xBF(CPU_Memory* memory)
@@ -2423,7 +2423,7 @@ static uint8_t opcode_0xE2(CPU_Memory* memory)
 
 	memory_write(memory, memory_address.value, memory->af.high);
 
-	return 12;
+	return 8;
 }
 
 static uint8_t opcode_0xE5(CPU_Memory* memory)
@@ -2504,6 +2504,123 @@ static uint8_t opcode_0xEF(CPU_Memory* memory)
 	write_byte(memory, &memory->stack_pointer, memory->program_counter.high);
 	write_byte(memory, &memory->stack_pointer, memory->program_counter.low);
 	memory->program_counter.value = 0x2800;
+
+	return 16;
+}
+
+static uint8_t opcode_0xF0(CPU_Memory* memory)
+{
+	uint8_t memory_value = fetch_byte(memory, &memory->program_counter);
+
+	memory16 address;
+	address.high = 0xFF;
+	address.low = memory_value;
+
+	memory->af.high = memory_read(memory, address.value);
+
+	return 12;
+}
+
+static uint8_t opcode_0xF1(CPU_Memory* memory)
+{
+	memory->af.value = fetch_two_bytes(memory, &memory->stack_pointer).value;
+
+	return 12;
+}
+
+static uint8_t opcode_0xF2(CPU_Memory* memory)
+{
+	uint8_t c_flag = (uint8_t)get_register_flag(memory, C);
+
+	memory16 address;
+	address.high = 0xFF;
+	address.low = c_flag;
+
+	memory->af.high = memory_read(memory, address.value);
+
+	return 8;
+}
+
+static uint8_t opcode_0xF5(CPU_Memory* memory)
+{
+	write_byte(memory, &memory->stack_pointer, memory->af.high);
+	write_byte(memory, &memory->stack_pointer, memory->af.low);
+
+	return 16;
+}
+
+static uint8_t opcode_0xF6(CPU_Memory* memory)
+{
+	set_register_flag(memory, N, false);
+	set_register_flag(memory, H, false);
+	set_register_flag(memory, C, false);
+
+	memory->af.high |= fetch_byte(memory, &memory->program_counter);
+
+	set_register_flag(memory, Z, memory->af.high == 0);
+
+	return 8;
+}
+
+static uint8_t opcode_0xF7(CPU_Memory* memory)
+{
+	write_byte(memory, &memory->stack_pointer, memory->program_counter.high);
+	write_byte(memory, &memory->stack_pointer, memory->program_counter.low);
+	memory->program_counter.value = 0x3000;
+
+	return 16;
+}
+
+static uint8_t opcode_0xF8(CPU_Memory* memory)
+{
+	uint8_t raw_byte = fetch_byte(memory, &memory->program_counter);
+	int8_t signed_offset = (int8_t)raw_byte;
+
+	set_register_flag(memory, Z, false);
+	set_register_flag(memory, N, false);
+	set_register_flag(memory, H, ((memory->stack_pointer & 0x0F) + (raw_byte & 0x0F)) > 0x0F);
+	set_register_flag(memory, C, ((memory->stack_pointer & 0xFF) + raw_byte) > 0xFF);
+
+	memory->hl.value = signed_offset + memory->stack_pointer;
+
+	return 12;
+}
+
+static uint8_t opcode_0xF9(CPU_Memory* memory)
+{
+	memory->stack_pointer = memory->hl.value;
+
+	return 8;
+}
+
+static uint8_t opcode_0xFA(CPU_Memory* memory)
+{
+	memory16 address = fetch_two_bytes(memory, &memory->program_counter);
+	memory->af.high = memory_read(memory, address.value);
+
+	return 16;
+}
+
+static uint8_t opcode_0xFE(CPU_Memory* memory)
+{
+	uint8_t memory_value = fetch_byte(memory, &memory->program_counter);
+
+	set_register_flag(memory, N, true);
+	set_register_flag(memory, H, (memory_value & 0x0F) > (memory->af.high & 0x0F));
+	set_register_flag(memory, C, memory_value > memory->af.high);
+
+	uint8_t compare_value = memory->af.high - memory_value;
+
+	set_register_flag(memory, Z, compare_value == 0);
+
+	return 8;
+}
+
+static uint8_t opcode_0xFF(CPU_Memory* memory)
+{
+	write_byte(memory, &memory->stack_pointer, memory->program_counter.high);
+	write_byte(memory, &memory->stack_pointer, memory->program_counter.low);
+	memory->program_counter.value = 0x3800;
 
 	return 16;
 }
@@ -3197,6 +3314,39 @@ uint8_t cpu_step(CPU_Memory* memory)
 			break;
 		case 0xEF:
 			cycles = opcode_0xEF(memory);
+			break;
+		case 0xF0:
+			cycles = opcode_0xF0(memory);
+			break;
+		case 0xF1:
+			cycles = opcode_0xF1(memory);
+			break;
+		case 0xF2:
+			cycles = opcode_0xF2(memory);
+			break;
+		case 0xF5:
+			cycles = opcode_0xF5(memory);
+			break;
+		case 0xF6:
+			cycles = opcode_0xF6(memory);
+			break;
+		case 0xF7:
+			cycles = opcode_0xF7(memory);
+			break;
+		case 0xF8:
+			cycles = opcode_0xF8(memory);
+			break;
+		case 0xF9:
+			cycles = opcode_0xF9(memory);
+			break;
+		case 0xFA:
+			cycles = opcode_0xFA(memory);
+			break;
+		case 0xFE:
+			cycles = opcode_0xFE(memory);
+			break;
+		case 0xFF:
+			cycles = opcode_0xFF(memory);
 			break;
 		default:
 			break;
