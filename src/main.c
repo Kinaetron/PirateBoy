@@ -10,9 +10,17 @@
 static SDL_Window* window = NULL;
 static SDL_GPUDevice* gpu_device = NULL;
 
+#define FPS 59.73
+#define CLOCK_HZ 4194304
+#define CYCLES_PER_FRAME ((int)(CLOCK_HZ / FPS))
+#define NANOSECONDS_PER_SECOND 1000000000.0
+#define SLEEP_MARGIN_NS 1000000
+
+static uint64_t last_time_ns = 0;
+
 SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
 {
-	window = SDL_CreateWindow("PirateBoy", 480, 432, SDL_WINDOW_RESIZABLE);
+	window = SDL_CreateWindow("PirateBoy", 160, 144, 0);
 
 	if (window == NULL)
 	{
@@ -47,7 +55,7 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
 		gpu_device,
 		window,
 		SDL_GPU_SWAPCHAINCOMPOSITION_SDR,
-		SDL_GPU_PRESENTMODE_VSYNC);
+		SDL_GPU_PRESENTMODE_IMMEDIATE);
 
 	return SDL_APP_CONTINUE;
 }
@@ -64,6 +72,26 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 
 SDL_AppResult SDL_AppIterate(void* appstate)
 {
+	int8_t cycles_this_frame = 0;
+
+	uint64_t target_duration_ns = (uint64_t)(((double)cycles_this_frame * NANOSECONDS_PER_SECOND) / CLOCK_HZ);
+	uint64_t target_deadline_ns = last_time_ns + target_duration_ns;
+
+	uint64_t now_ns = SDL_GetTicksNS();
+
+	if (now_ns < target_deadline_ns)
+	{
+		uint64_t remaining_ns = target_deadline_ns - now_ns;
+
+		if (remaining_ns > SLEEP_MARGIN_NS) {
+			SDL_DelayNS(remaining_ns - SLEEP_MARGIN_NS);
+		}
+	}
+
+	while (SDL_GetTicksNS() < target_deadline_ns) { }
+
+	last_time_ns = SDL_GetTicksNS();
+
 	SDL_GPUCommandBuffer* cmdbuf = SDL_AcquireGPUCommandBuffer(gpu_device);
 
 	if (cmdbuf == NULL)
