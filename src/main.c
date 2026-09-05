@@ -14,7 +14,6 @@ static SDL_GPUDevice* gpu_device = NULL;
 #define CLOCK_HZ 4194304
 #define CYCLES_PER_FRAME ((int)(CLOCK_HZ / FPS))
 #define NANOSECONDS_PER_SECOND 1000000000.0
-#define SLEEP_MARGIN_NS 1000000
 
 static uint64_t last_time_ns = 0;
 
@@ -79,16 +78,9 @@ SDL_AppResult SDL_AppIterate(void* appstate)
 
 	uint64_t now_ns = SDL_GetTicksNS();
 
-	if (now_ns < target_deadline_ns)
-	{
-		uint64_t remaining_ns = target_deadline_ns - now_ns;
-
-		if (remaining_ns > SLEEP_MARGIN_NS) {
-			SDL_DelayNS(remaining_ns - SLEEP_MARGIN_NS);
-		}
+	if (now_ns < target_deadline_ns) {
+		SDL_DelayPrecise(target_deadline_ns - now_ns);
 	}
-
-	while (SDL_GetTicksNS() < target_deadline_ns) { }
 
 	last_time_ns = SDL_GetTicksNS();
 
