@@ -33,6 +33,8 @@
 
 #define INTERRUPT_ENABLE_ADDR 0xFFFF
 
+#define INTERRUPT_FLAG_ADDR 0xFF0F
+
 #define MMU_UNMAPPED_READ_VALUE 0xFF
 
 typedef union
@@ -53,6 +55,7 @@ typedef struct
 	uint8_t input_output[IO_SIZE];
 	uint8_t hram[HRAM_SIZE];
 	uint8_t interrupt_enable;
+	uint8_t interrupt_flag;
 
 	memory16 af;
 	memory16 bc;
