@@ -1,6 +1,9 @@
 #include "cpu.h"
 #include "memory.h"
-#include <stdbool.h>
+
+static bool is_halted;
+static bool interrupt_master_enable;
+static bool interrupt_enable_pending;
 
 static uint8_t memory_read(CPU_Memory* memory, uint16_t address)
 {
@@ -12,6 +15,9 @@ static uint8_t memory_read(CPU_Memory* memory, uint16_t address)
 	}
 	else if (address >= ECHO_RAM_START && address <= ECHO_RAM_END) {
 		return memory->wram[address - ECHO_RAM_START];
+	}
+	else if (address == INTERRUPT_FLAG_ADDR) {
+		return memory->interrupt_flag;
 	}
 	else if (address >= IO_START && address <= IO_END) {
 		return memory->input_output[address - IO_START];
@@ -37,6 +43,9 @@ static void memory_write(CPU_Memory* memory, uint16_t address, uint8_t data)
 	else if (address >= ECHO_RAM_START && address <= ECHO_RAM_END) {
 		memory->wram[address - ECHO_RAM_START] = data;
 	}
+	else if (address == INTERRUPT_FLAG_ADDR) {
+		memory->interrupt_flag = data;
+	}
 	else if (address >= IO_START && address <= IO_END) {
 		memory->input_output[address - IO_START] = data;
 	}
@@ -54,6 +63,25 @@ static void memory_write(CPU_Memory* memory, uint16_t address, uint8_t data)
 	}
 }
 
+void cpu_reset_state(void)
+{
+	is_halted = false;
+	interrupt_master_enable = false;
+	interrupt_enable_pending = false;
+}
+
+bool cpu_is_halted(void) {
+	return is_halted;
+}
+
+bool cpu_interrupt_master_enable(void) {
+	return interrupt_master_enable;
+}
+
+bool cpu_interrupt_master_pending(void) {
+	return interrupt_enable_pending;
+}
+
 static bool get_register_flag(CPU_Memory* memory, Flag flag) {
 	return (memory->af.low >> flag) & 1;
 }
@@ -69,6 +97,35 @@ static void set_register_flag(CPU_Memory* memory, Flag flag, bool value)
 
 	memory->af.low &= 0xF0;
 }
+
+static bool get_ie_interrupt(CPU_Memory* memory, Interrupt_Flag flag) {
+	return (memory->interrupt_enable >> flag) & 1;
+}
+
+static void set_ie_interrupt(CPU_Memory* memory, Interrupt_Flag flag, bool value)
+{
+	if (value) {
+		memory->interrupt_enable |= (1 << flag);
+	}
+	else {
+		memory->interrupt_enable &= ~(1 << flag);
+	}
+}
+
+static bool get_if_interrupt(CPU_Memory* memory, Interrupt_Flag flag) {
+	return (memory->interrupt_flag >> flag) & 1;
+}
+
+static void set_if_interrupt(CPU_Memory* memory, Interrupt_Flag flag, bool value)
+{
+	if (value) {
+		memory->interrupt_flag |= (1 << flag);
+	}
+	else {
+		memory->interrupt_flag &= ~(1 << flag);
+	}
+}
+
 
 static uint8_t fetch_byte(CPU_Memory* memory, uint16_t* address)
 {
@@ -1115,6 +1172,13 @@ static uint8_t opcode_0x75(CPU_Memory* memory)
 	memory_write(memory, memory->hl.value, memory->hl.low);
 
 	return 8;
+}
+
+static uint8_t opcode_0x76()
+{
+	is_halted = true;
+
+	return 4;
 }
 
 static uint8_t opcode_0x77(CPU_Memory* memory)
@@ -2336,6 +2400,18 @@ static uint8_t opcode_0xD8(CPU_Memory* memory)
 	return 8;
 }
 
+static uint8_t opcode_0xD9(CPU_Memory* memory)
+{
+	memory16 return_address;
+	return_address.low = fetch_byte(memory, &memory->stack_pointer);
+	return_address.high = fetch_byte(memory, &memory->stack_pointer);
+
+	memory->program_counter.value = return_address.value;
+	interrupt_master_enable = true;
+
+	return 16;
+}
+
 static uint8_t opcode_0xDA(CPU_Memory* memory)
 {
 	bool c_flag = get_register_flag(memory, C);
@@ -2541,6 +2617,14 @@ static uint8_t opcode_0xF2(CPU_Memory* memory)
 	return 8;
 }
 
+static uint8_t opcode_0xF3()
+{
+	interrupt_master_enable = false;
+	interrupt_enable_pending = false;
+
+	return 4;
+}
+
 static uint8_t opcode_0xF5(CPU_Memory* memory)
 {
 	write_byte(memory, &memory->stack_pointer, memory->af.high);
@@ -2601,6 +2685,13 @@ static uint8_t opcode_0xFA(CPU_Memory* memory)
 	return 16;
 }
 
+static uint8_t opcode_0xFB()
+{
+	interrupt_enable_pending = true;
+
+	return 4;
+}
+
 static uint8_t opcode_0xFE(CPU_Memory* memory)
 {
 	uint8_t memory_value = fetch_byte(memory, &memory->program_counter);
@@ -2625,8 +2716,74 @@ static uint8_t opcode_0xFF(CPU_Memory* memory)
 	return 16;
 }
 
+static const uint16_t interrupt_vectors[5] =
+{
+	0x0040, // VBlank
+	0x0048, // LCD STAT
+	0x0050, // Timer
+	0x0058, // Serial
+	0x0060  // Joypad
+};
+
+static uint8_t is_pending(CPU_Memory* memory) {
+	return memory->interrupt_enable & memory->interrupt_flag & 0x1F;
+}
+
+static uint8_t handle_interrupts(CPU_Memory* memory)
+{
+	if (interrupt_master_enable)
+	{
+		if (is_pending(memory) != 0)
+		{
+			for (int i = 0; i < 5; i++)
+			{
+				if (get_if_interrupt(memory, (Interrupt_Flag)i) && 
+					get_ie_interrupt(memory, (Interrupt_Flag)i))
+				{
+					set_if_interrupt(memory, (Interrupt_Flag)i, false);
+					interrupt_master_enable = false;
+
+					memory16 return_address;
+					return_address.value = memory->program_counter.value;
+
+					write_byte(memory, &memory->stack_pointer, return_address.high);
+					write_byte(memory, &memory->stack_pointer, return_address.low);
+
+					memory->program_counter.value = interrupt_vectors[i];
+
+					return 20;
+				}
+			}
+		}
+	}
+
+	return 0;
+}
+
 uint8_t cpu_step(CPU_Memory* memory)
 {
+	if (interrupt_enable_pending)
+	{
+		interrupt_master_enable = true;
+		interrupt_enable_pending = false;
+	}
+
+	if (is_halted)
+	{
+		if (is_pending(memory) != 0) {
+			is_halted = false;
+		}
+		else {
+			return 4;
+		}
+	}
+
+	uint8_t interrupt_cycles = handle_interrupts(memory);
+
+	if (interrupt_cycles != 0) {
+		return interrupt_cycles;
+	}
+
 	uint8_t opcode = fetch_byte(memory, &memory->program_counter);
 	uint8_t cycles = 4;
 
@@ -2982,6 +3139,9 @@ uint8_t cpu_step(CPU_Memory* memory)
 		case 0x75:
 			cycles = opcode_0x75(memory);
 			break;
+		case 0x76:
+			cycles = opcode_0x76();
+			break;
 		case 0x77:
 			cycles = opcode_0x77(memory);
 			break;
@@ -3270,6 +3430,9 @@ uint8_t cpu_step(CPU_Memory* memory)
 		case 0xD8:
 			cycles = opcode_0xD8(memory);
 			break;
+		case 0xD9:
+			cycles = opcode_0xD9(memory);
+			break;
 		case 0xDA:
 			cycles = opcode_0xDA(memory);
 			break;
@@ -3324,6 +3487,9 @@ uint8_t cpu_step(CPU_Memory* memory)
 		case 0xF2:
 			cycles = opcode_0xF2(memory);
 			break;
+		case 0xF3:
+			cycles = opcode_0xF3();
+			break;
 		case 0xF5:
 			cycles = opcode_0xF5(memory);
 			break;
@@ -3341,6 +3507,9 @@ uint8_t cpu_step(CPU_Memory* memory)
 			break;
 		case 0xFA:
 			cycles = opcode_0xFA(memory);
+			break;
+		case 0xFB:
+			cycles = opcode_0xFB();
 			break;
 		case 0xFE:
 			cycles = opcode_0xFE(memory);
