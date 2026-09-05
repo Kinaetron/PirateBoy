@@ -36,6 +36,14 @@ target_link_libraries(PirateBoyTests
         unity
 )
 
+add_custom_command(TARGET PirateBoy POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E echo "Copying SDL3 from: $<TARGET_FILE:SDL3::SDL3>"
+    COMMAND ${CMAKE_COMMAND} -E echo "Copying SDL3 to: $<TARGET_FILE_DIR:PirateBoy>"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        $<TARGET_FILE:SDL3::SDL3>
+        $<TARGET_FILE_DIR:PirateBoy>
+)
+
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES
     src/main.c
     src/cpu.c
