@@ -9,7 +9,9 @@ set(SDL3_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/external/SDL/include)
 
 add_library(PirateBoyCore STATIC
     src/cpu.c
+    src/timer.c
     include/cpu.h
+    include/timer.h
     include/memory.h
 )
 target_include_directories(PirateBoyCore PUBLIC include)
@@ -47,7 +49,9 @@ add_custom_command(TARGET PirateBoy POST_BUILD
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES
     src/main.c
     src/cpu.c
+    src/timer.c
     include/cpu.h
+    include/timer.h
     include/memory.h
 )
 
