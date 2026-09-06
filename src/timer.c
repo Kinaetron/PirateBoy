@@ -1,31 +1,22 @@
 #include "timer.h"
 
 static uint32_t divider_cycles = 0;
-static uint32_t previous_register_count = 0;
 
 static void divider_register_incrementer(CPU_Memory* memory, uint32_t cycles)
 {
-	if (cycles >= DIVER_INCREMENT) 
+	divider_cycles += cycles;
+
+	while (divider_cycles >= DIVIDER_INCREMENT)
 	{
-		if (memory->input_output[DIVIDER_REGISTER] != previous_register_count) 
-		{
-			memory->input_output[DIVIDER_REGISTER] = 0;
-			divider_cycles = 0;
-
-			return;
-		}
-
-		while (divider_cycles >= DIVER_INCREMENT)
-		{
-			divider_cycles -= DIVER_INCREMENT;
-
-			memory->input_output[DIVIDER_REGISTER]++;
-			previous_register_count = memory->input_output[DIVIDER_REGISTER];
-		}
+		divider_cycles -= DIVIDER_INCREMENT;
+		memory_divider_register_incrementer(memory);
 	}
 }
 
-void timer_step(CPU_Memory* memory, uint8_t cycles)
-{
+void timer_reset_divider(void) {
+	divider_cycles = 0;
+}
+
+void timer_step(CPU_Memory* memory, uint8_t cycles) {
 	divider_register_incrementer(memory, cycles);
 }
