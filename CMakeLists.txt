@@ -7,6 +7,14 @@ set(SDL_TEST_LIBRARY OFF CACHE BOOL "" FORCE)
 add_subdirectory(external/SDL)
 set(SDL3_INCLUDES ${CMAKE_CURRENT_SOURCE_DIR}/external/SDL/include)
 
+add_library(cjson STATIC
+    external/cJSON/cJSON.c
+)
+
+target_include_directories(cjson PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/external/cJSON
+)
+
 add_library(PirateBoyCore STATIC
     src/cpu.c
     src/timer.c
@@ -32,11 +40,18 @@ target_include_directories(unity PUBLIC external/Unity/src)
 
 add_executable(PirateBoyTests
     tests/cpu/opcode.c
+    tests/cpu/opcode_tests.c
 )
+
+target_compile_definitions(PirateBoyTests PRIVATE
+    SM83_TEST_DATA_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/files"
+)
+
 target_link_libraries(PirateBoyTests
     PRIVATE
         PirateBoyCore
         unity
+        cjson
 )
 
 add_custom_command(TARGET PirateBoy POST_BUILD
