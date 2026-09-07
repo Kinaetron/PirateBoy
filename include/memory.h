@@ -52,13 +52,9 @@ typedef union
 
 typedef struct
 {
-	uint8_t* rom;
+	uint8_t flat[0x10000];
 
-	uint8_t wram[WRAM_SIZE];
-	uint8_t input_output[IO_SIZE];
-	uint8_t hram[HRAM_SIZE];
-	uint8_t interrupt_enable;
-	uint8_t interrupt_flag;
+	uint8_t* rom;
 
 	memory16 af;
 	memory16 bc;

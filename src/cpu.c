@@ -41,21 +41,21 @@ static void set_register_flag(CPU_Memory* memory, Flag flag, bool value)
 }
 
 static bool get_ie_interrupt(CPU_Memory* memory, Interrupt_Flag flag) {
-	return (memory->interrupt_enable >> flag) & 1;
+	return (memory->flat[INTERRUPT_ENABLE_ADDR] >> flag) & 1;
 }
 
 static void set_ie_interrupt(CPU_Memory* memory, Interrupt_Flag flag, bool value)
 {
 	if (value) {
-		memory->interrupt_enable |= (1 << flag);
+		memory->flat[INTERRUPT_ENABLE_ADDR] |= (1 << flag);
 	}
 	else {
-		memory->interrupt_enable &= ~(1 << flag);
+		memory->flat[INTERRUPT_ENABLE_ADDR] &= ~(1 << flag);
 	}
 }
 
 static bool get_if_interrupt(CPU_Memory* memory, Interrupt_Flag flag) {
-	return (memory->interrupt_flag >> flag) & 1;
+	return (memory->flat[INTERRUPT_FLAG_ADDR] >> flag) & 1;
 }
 
 static uint8_t fetch_byte(CPU_Memory* memory, uint16_t* address)
@@ -2657,7 +2657,7 @@ static const uint16_t interrupt_vectors[5] =
 };
 
 static uint8_t is_pending(CPU_Memory* memory) {
-	return memory->interrupt_enable & memory->interrupt_flag & 0x1F;
+	return memory->flat[INTERRUPT_ENABLE_ADDR] & memory->flat[INTERRUPT_FLAG_ADDR] & 0x1F;
 }
 
 static uint8_t handle_interrupts(CPU_Memory* memory)

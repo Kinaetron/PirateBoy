@@ -1,4 +1,4 @@
-#include "cpu.h"
+/*#include "cpu.h"
 #include "unity.h"
 #include "memory.h"
 
@@ -9239,4 +9239,4 @@ void test_cpu_step_opcode_0xFF(void)
 //    RUN_TEST(test_cpu_step_opcode_0xFF);
 //
 //    return UNITY_END();
-//}
+//}*/

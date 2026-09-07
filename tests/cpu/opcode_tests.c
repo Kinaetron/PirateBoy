@@ -7,34 +7,20 @@
 #include <stdlib.h>
 #include <string.h>
 
-extern CPU_Memory* memory;
+CPU_Memory* memory = NULL;
 
-static void raw_memory_write(CPU_Memory* memory, uint16_t address, uint8_t value)
+void setUp(void) {
+	memory = calloc(1, sizeof(CPU_Memory));
+}
+
+void tearDown(void)
 {
-	if (address >= ROM_START && address <= ROM_END) {
-		memory->rom[address] = value;
-	}
-	else if (address >= WRAM_START && address <= WRAM_END) {
-		memory->wram[address - WRAM_START] = value;
-	}
-	else if (address >= ECHO_RAM_START && address <= ECHO_RAM_END) {
-		memory->wram[address - ECHO_RAM_START] = value;
-	}
-	else if (address == DIVIDER_REGISTER) {
-		memory->input_output[DIVIDER_REGISTER - IO_START] = value;
-	}
-	else if (address == INTERRUPT_FLAG_ADDR) {
-		memory->interrupt_flag = value;
-	}
-	else if (address >= IO_START && address <= IO_END) {
-		memory->input_output[address - IO_START] = value;
-	}
-	else if (address >= HRAM_START && address <= HRAM_END) {
-		memory->hram[address - HRAM_START] = value;
-	}
-	else if (address == INTERRUPT_ENABLE_ADDR) {
-		memory->interrupt_enable = value;
-	}
+	free(memory);
+	memory = NULL;
+}
+
+static void raw_memory_write(CPU_Memory* memory, uint16_t address, uint8_t value) {
+	memory->flat[address] = value;
 }
 
 static uint8_t json_u8(cJSON* obj, const char* key) {
@@ -59,7 +45,7 @@ static void apply_state(CPU_Memory* memory, cJSON* state)
 	memory->program_counter.value = json_u16(state, "pc");
 	memory->stack_pointer = json_u16(state, "sp");
 
-	memory->interrupt_enable = json_u8(state, "ie");
+	memory->flat[INTERRUPT_FLAG_ADDR] = json_u8(state, "ie");
 
 	//cpu_interrupt_master_enable(cJSON_GetObjectItem(state, "ime")->valueint != 0);
 
@@ -170,12 +156,7 @@ static void run_opcode_test_file(const char* filename)
 	{
 		total++;
 
-		memset(memory->wram, 0, sizeof(memory->wram));
-		memset(memory->input_output, 0, sizeof(memory->input_output));
-		memset(memory->hram, 0, sizeof(memory->hram));
-
-		memory->interrupt_enable = 0;
-		memory->interrupt_flag = 0;
+		memset(memory->flat, 0, sizeof(memory->flat));
 
 		memory->af.value = 0;
 		memory->bc.value = 0;
