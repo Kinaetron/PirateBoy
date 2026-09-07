@@ -58,17 +58,6 @@ static bool get_if_interrupt(CPU_Memory* memory, Interrupt_Flag flag) {
 	return (memory->interrupt_flag >> flag) & 1;
 }
 
-static void set_if_interrupt(CPU_Memory* memory, Interrupt_Flag flag, bool value)
-{
-	if (value) {
-		memory->interrupt_flag |= (1 << flag);
-	}
-	else {
-		memory->interrupt_flag &= ~(1 << flag);
-	}
-}
-
-
 static uint8_t fetch_byte(CPU_Memory* memory, uint16_t* address)
 {
 	uint8_t value = memory_read(memory, *address);

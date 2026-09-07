@@ -67,3 +67,13 @@ void memory_write(CPU_Memory* memory, uint16_t address, uint8_t data)
 void memory_divider_register_incrementer(CPU_Memory* memory) {
 	memory->input_output[DIVIDER_REGISTER - IO_START]++;
 }
+
+void set_if_interrupt(CPU_Memory* memory, Interrupt_Flag flag, bool value)
+{
+	if (value) {
+		memory->interrupt_flag |= (1 << flag);
+	}
+	else {
+		memory->interrupt_flag &= ~(1 << flag);
+	}
+}
