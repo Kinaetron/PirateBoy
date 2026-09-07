@@ -2,6 +2,7 @@
 #define CPU_MEMORY
 
 #include <stdint.h>
+#include <stdbool.h>
 
 #define IO_SIZE 128
 #define HRAM_SIZE 127
@@ -37,6 +38,8 @@
 
 #define MMU_UNMAPPED_READ_VALUE 0xFF
 
+#define DIVIDER_REGISTER	0XFF04
+
 typedef union
 {
 	uint16_t value;
@@ -65,5 +68,12 @@ typedef struct
 	uint16_t stack_pointer;
 	memory16 program_counter;
 } CPU_Memory;
+
+typedef enum { JoyPad = 4, Serial = 3, Timer = 2, LCD = 1, VBlank = 0 } Interrupt_Flag;
+
+uint8_t memory_read(CPU_Memory* memory, uint16_t address);
+void memory_write(CPU_Memory* memory, uint16_t address, uint8_t data);
+void memory_divider_register_incrementer(CPU_Memory* memory);
+void set_if_interrupt(CPU_Memory* memory, Interrupt_Flag flag, bool value);
 
 #endif

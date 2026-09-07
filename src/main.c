@@ -7,10 +7,14 @@
 #include <SDL3/SDL_main.h>
 #include <stdbool.h>
 
+#include "cpu.h"
+#include "timer.h"
+#include "memory.h"
+
 static SDL_Window* window = NULL;
 static SDL_GPUDevice* gpu_device = NULL;
 
-#define FPS 59.73
+#define FPS 59.7275
 #define CLOCK_HZ 4194304
 #define CYCLES_PER_FRAME ((int)(CLOCK_HZ / FPS))
 #define NANOSECONDS_PER_SECOND 1000000000.0
@@ -72,6 +76,10 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 SDL_AppResult SDL_AppIterate(void* appstate)
 {
 	int8_t cycles_this_frame = 0;
+
+	while (cycles_this_frame < CYCLES_PER_FRAME)
+	{
+	}
 
 	uint64_t target_duration_ns = (uint64_t)(((double)cycles_this_frame * NANOSECONDS_PER_SECOND) / CLOCK_HZ);
 	uint64_t target_deadline_ns = last_time_ns + target_duration_ns;
