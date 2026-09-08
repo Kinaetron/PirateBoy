@@ -18,12 +18,18 @@ target_include_directories(cjson PUBLIC
 add_library(PirateBoyCore STATIC
     src/cpu.c
     src/timer.c
-    src/memory.c
     include/cpu.h
     include/timer.h
     include/memory.h
 )
+
 target_include_directories(PirateBoyCore PUBLIC include)
+
+add_library(PirateBoyMemory STATIC src/memory.c)
+target_include_directories(PirateBoyMemory PUBLIC include)
+
+add_library(PirateBoyMemoryConformance STATIC src/memory_conformance.c)
+target_include_directories(PirateBoyMemoryConformance PUBLIC include)
 
 add_executable(PirateBoy
     src/main.c
@@ -32,6 +38,7 @@ target_include_directories(PirateBoy PRIVATE include)
 target_link_libraries(PirateBoy
     PRIVATE
         PirateBoyCore
+        PirateBoyMemory
         SDL3::SDL3
 )
 
@@ -39,7 +46,6 @@ add_library(unity STATIC external/Unity/src/unity.c)
 target_include_directories(unity PUBLIC external/Unity/src)
 
 add_executable(PirateBoyTests
-    tests/cpu/opcode.c
     tests/cpu/opcode_tests.c
 )
 
@@ -50,6 +56,7 @@ target_compile_definitions(PirateBoyTests PRIVATE
 target_link_libraries(PirateBoyTests
     PRIVATE
         PirateBoyCore
+        PirateBoyMemoryConformance
         unity
         cjson
 )
@@ -67,6 +74,7 @@ source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES
     src/cpu.c
     src/timer.c
     src/memory.c
+    src/memory_conformance.c
     include/cpu.h
     include/timer.h
     include/memory.h
