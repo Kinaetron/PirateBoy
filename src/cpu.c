@@ -25,6 +25,10 @@ bool cpu_interrupt_master_pending(void) {
 	return interrupt_enable_pending;
 }
 
+void cpu_set_interrupt_master_enable(bool value) {
+	interrupt_master_enable = value;
+}
+
 static bool get_register_flag(CPU_Memory* memory, Flag flag) {
 	return (memory->af.low >> flag) & 1;
 }
@@ -2703,7 +2707,7 @@ static uint8_t handle_interrupts(CPU_Memory* memory)
 	return 0;
 }
 
-uint8_t cpu_step(CPU_Memory* memory)
+uint8_t cpu_step(CPU_Memory* memory, bool interrupt_enabled)
 {
 	if (interrupt_enable_pending)
 	{
@@ -2721,10 +2725,13 @@ uint8_t cpu_step(CPU_Memory* memory)
 		}
 	}
 
-	uint8_t interrupt_cycles = handle_interrupts(memory);
+	if (interrupt_enabled)
+	{
+		uint8_t interrupt_cycles = handle_interrupts(memory);
 
-	if (interrupt_cycles != 0) {
-		return interrupt_cycles;
+		if (interrupt_cycles != 0) {
+			return interrupt_cycles;
+		}
 	}
 
 	uint8_t opcode = fetch_byte(memory, &memory->program_counter);

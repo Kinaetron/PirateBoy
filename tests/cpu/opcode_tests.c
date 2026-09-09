@@ -55,6 +55,8 @@ static void apply_state(CPU_Memory* memory, cJSON* state)
 
 	memory->flat[INTERRUPT_FLAG_ADDR] = 0;
 
+	cpu_set_interrupt_master_enable(cJSON_GetObjectItem(state, "ime")->valueint != 0);
+
 	cJSON* ram = cJSON_GetObjectItem(state, "ram");
 	cJSON* entry;
 
@@ -113,6 +115,15 @@ static int state_matches(CPU_Memory* memory, cJSON* state, char* failure_detail,
 		snprintf(failure_detail, detail_size, "stack pointer: expected 0x%04X, got 0x%04X",
 			expected_stack_pointer, memory->stack_pointer);
 
+		return 0;
+	}
+
+	bool expected_ime = cJSON_GetObjectItem(state, "ime")->valueint != 0;
+	bool actual_ime = cpu_interrupt_master_enable();
+
+	if (actual_ime != expected_ime)
+	{
+		snprintf(failure_detail, detail_size, "ime: expected %d, got %d", expected_ime, actual_ime);
 		return 0;
 	}
 
@@ -177,7 +188,7 @@ static void run_opcode_test_file(const char* filename)
 		cJSON* initial = cJSON_GetObjectItem(test_case, "initial");
 		apply_state(memory, initial);
 
-		cpu_step(memory);
+		cpu_step(memory, false);
 
 		cJSON* final_state = cJSON_GetObjectItem(test_case, "final");
 		char detail[128];
