@@ -20,6 +20,7 @@ bool cpu_interrupt_master_enable(void) {
 	return interrupt_master_enable;
 }
 
+
 bool cpu_interrupt_master_pending(void) {
 	return interrupt_enable_pending;
 }
@@ -41,21 +42,21 @@ static void set_register_flag(CPU_Memory* memory, Flag flag, bool value)
 }
 
 static bool get_ie_interrupt(CPU_Memory* memory, Interrupt_Flag flag) {
-	return (memory->interrupt_enable >> flag) & 1;
+	return (memory->flat[INTERRUPT_ENABLE_ADDR] >> flag) & 1;
 }
 
 static void set_ie_interrupt(CPU_Memory* memory, Interrupt_Flag flag, bool value)
 {
 	if (value) {
-		memory->interrupt_enable |= (1 << flag);
+		memory->flat[INTERRUPT_ENABLE_ADDR] |= (1 << flag);
 	}
 	else {
-		memory->interrupt_enable &= ~(1 << flag);
+		memory->flat[INTERRUPT_ENABLE_ADDR] &= ~(1 << flag);
 	}
 }
 
 static bool get_if_interrupt(CPU_Memory* memory, Interrupt_Flag flag) {
-	return (memory->interrupt_flag >> flag) & 1;
+	return (memory->flat[INTERRUPT_FLAG_ADDR] >> flag) & 1;
 }
 
 static uint8_t fetch_byte(CPU_Memory* memory, uint16_t* address)
@@ -601,7 +602,7 @@ static uint8_t opcode_0x34(CPU_Memory* memory)
 
 	uint8_t value = memory_read(memory, memory->hl.value);
 
-	set_register_flag(memory, N, true);
+	set_register_flag(memory, N, false);
 	set_register_flag(memory, H, (value & 0x0F) == 0x0F);
 
 	value++;
@@ -1009,7 +1010,8 @@ static uint8_t opcode_0x67(CPU_Memory* memory)
 
 static uint8_t opcode_0x68(CPU_Memory* memory)
 {
-	memory->hl.high = memory->bc.high;
+
+	memory->hl.low = memory->bc.high;
 
 	return 4;
 }
@@ -2083,7 +2085,7 @@ static uint8_t opcode_0xC2(CPU_Memory* memory)
 
 static uint8_t opcode_0xC3(CPU_Memory* memory)
 {
-	memory->program_counter.value = fetch_two_bytes(memory, &memory->program_counter).value;
+	memory->program_counter = fetch_two_bytes(memory, &memory->program_counter);
 
 	return 16;
 }
@@ -2095,10 +2097,10 @@ static uint8_t opcode_0xC4(CPU_Memory* memory)
 
 	if (!z_flag)
 	{
-		write_byte(memory, &memory->stack_pointer, jump_target.high);
-		write_byte(memory, &memory->stack_pointer, jump_target.low);
+		write_byte(memory, &memory->stack_pointer, memory->program_counter.high);
+		write_byte(memory, &memory->stack_pointer, memory->program_counter.low);
 
-		memory->program_counter.value = jump_target.value;
+		memory->program_counter = jump_target;
 
 		return 24;
 	}
@@ -2182,10 +2184,10 @@ static uint8_t opcode_0xCC(CPU_Memory* memory)
 
 	if (z_flag)
 	{
-		write_byte(memory, &memory->stack_pointer, jump_target.high);
-		write_byte(memory, &memory->stack_pointer, jump_target.low);
+		write_byte(memory, &memory->stack_pointer, memory->program_counter.high);
+		write_byte(memory, &memory->stack_pointer, memory->program_counter.low);
 
-		memory->program_counter.value = jump_target.value;
+		memory->program_counter = jump_target;
 
 		return 24;
 	}
@@ -2197,10 +2199,10 @@ static uint8_t opcode_0xCD(CPU_Memory* memory)
 {
 	memory16 jump_target = fetch_two_bytes(memory, &memory->program_counter);
 
-	write_byte(memory, &memory->stack_pointer, jump_target.high);
-	write_byte(memory, &memory->stack_pointer, jump_target.low);
+	write_byte(memory, &memory->stack_pointer, memory->program_counter.high);
+	write_byte(memory, &memory->stack_pointer, memory->program_counter.low);
 
-	memory->program_counter.value = jump_target.value;
+	memory->program_counter = jump_target;
 
 	return 24;
 }
@@ -2225,7 +2227,8 @@ static uint8_t opcode_0xCF(CPU_Memory* memory)
 {
 	write_byte(memory, &memory->stack_pointer, memory->program_counter.high);
 	write_byte(memory, &memory->stack_pointer, memory->program_counter.low);
-	memory->program_counter.value = 0x0800;
+	memory->program_counter.high = 0x00;
+	memory->program_counter.low = 0x08;
 
 	return 16;
 }
@@ -2311,7 +2314,9 @@ static uint8_t opcode_0xD7(CPU_Memory* memory)
 {
 	write_byte(memory, &memory->stack_pointer, memory->program_counter.high);
 	write_byte(memory, &memory->stack_pointer, memory->program_counter.low);
-	memory->program_counter.value = 0x1000;
+
+	memory->program_counter.low = 0x10;
+	memory->program_counter.high = 0x00;
 
 	return 16;
 }
@@ -2364,10 +2369,10 @@ static uint8_t opcode_0xDC(CPU_Memory* memory)
 
 	if (c_flag)
 	{
-		write_byte(memory, &memory->stack_pointer, jump_target.high);
-		write_byte(memory, &memory->stack_pointer, jump_target.low);
+		write_byte(memory, &memory->stack_pointer, memory->program_counter.high);
+		write_byte(memory, &memory->stack_pointer, memory->program_counter.low);
 
-		memory->program_counter.value = jump_target.value;
+		memory->program_counter = jump_target;
 
 		return 24;
 	}
@@ -2395,7 +2400,9 @@ static uint8_t opcode_0xDF(CPU_Memory* memory)
 {
 	write_byte(memory, &memory->stack_pointer, memory->program_counter.high);
 	write_byte(memory, &memory->stack_pointer, memory->program_counter.low);
-	memory->program_counter.value = 0x1800;
+
+	memory->program_counter.low = 0x18;
+	memory->program_counter.high = 0x00;
 
 	return 16;
 }
@@ -2415,18 +2422,16 @@ static uint8_t opcode_0xE0(CPU_Memory* memory)
 
 static uint8_t opcode_0xE1(CPU_Memory* memory)
 {
-	memory->hl.value = fetch_two_bytes(memory, &memory->stack_pointer).value;
+	memory->hl = fetch_two_bytes(memory, &memory->stack_pointer);
 
 	return 12;
 }
 
 static uint8_t opcode_0xE2(CPU_Memory* memory)
 {
-	uint8_t c_flag = (uint8_t) get_register_flag(memory, C);
-
 	memory16 memory_address;
 	memory_address.high = 0xFF;
-	memory_address.low = c_flag;
+	memory_address.low = memory->bc.low;
 
 	memory_write(memory, memory_address.value, memory->af.high);
 
@@ -2458,7 +2463,9 @@ static uint8_t opcode_0xE7(CPU_Memory* memory)
 {
 	write_byte(memory, &memory->stack_pointer, memory->program_counter.high);
 	write_byte(memory, &memory->stack_pointer, memory->program_counter.low);
-	memory->program_counter.value = 0x2000;
+
+	memory->program_counter.low = 0x20;
+	memory->program_counter.high = 0x00;
 
 	return 16;
 }
@@ -2510,7 +2517,9 @@ static uint8_t opcode_0xEF(CPU_Memory* memory)
 {
 	write_byte(memory, &memory->stack_pointer, memory->program_counter.high);
 	write_byte(memory, &memory->stack_pointer, memory->program_counter.low);
-	memory->program_counter.value = 0x2800;
+
+	memory->program_counter.low = 0x28;
+	memory->program_counter.high = 0x00;
 
 	return 16;
 }
@@ -2530,18 +2539,17 @@ static uint8_t opcode_0xF0(CPU_Memory* memory)
 
 static uint8_t opcode_0xF1(CPU_Memory* memory)
 {
-	memory->af.value = fetch_two_bytes(memory, &memory->stack_pointer).value;
+	memory->af = fetch_two_bytes(memory, &memory->stack_pointer);
+	memory->af.low &= 0xF0;
 
 	return 12;
 }
 
 static uint8_t opcode_0xF2(CPU_Memory* memory)
 {
-	uint8_t c_flag = (uint8_t)get_register_flag(memory, C);
-
 	memory16 address;
 	address.high = 0xFF;
-	address.low = c_flag;
+	address.low = memory->bc.low;
 
 	memory->af.high = memory_read(memory, address.value);
 
@@ -2581,7 +2589,9 @@ static uint8_t opcode_0xF7(CPU_Memory* memory)
 {
 	write_byte(memory, &memory->stack_pointer, memory->program_counter.high);
 	write_byte(memory, &memory->stack_pointer, memory->program_counter.low);
-	memory->program_counter.value = 0x3000;
+
+	memory->program_counter.low = 0x30;
+	memory->program_counter.high = 0x00;
 
 	return 16;
 }
@@ -2642,7 +2652,9 @@ static uint8_t opcode_0xFF(CPU_Memory* memory)
 {
 	write_byte(memory, &memory->stack_pointer, memory->program_counter.high);
 	write_byte(memory, &memory->stack_pointer, memory->program_counter.low);
-	memory->program_counter.value = 0x3800;
+
+	memory->program_counter.low = 0x38;
+	memory->program_counter.high = 0x00;
 
 	return 16;
 }
@@ -2657,7 +2669,7 @@ static const uint16_t interrupt_vectors[5] =
 };
 
 static uint8_t is_pending(CPU_Memory* memory) {
-	return memory->interrupt_enable & memory->interrupt_flag & 0x1F;
+	return memory->flat[INTERRUPT_ENABLE_ADDR] & memory->flat[INTERRUPT_FLAG_ADDR] & 0x1F;
 }
 
 static uint8_t handle_interrupts(CPU_Memory* memory)

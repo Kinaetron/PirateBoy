@@ -51,7 +51,14 @@ Module.symvers
 Mkfile.old
 dkms.conf
 
-# debug information files
+# Debug information files
 *.dwo
+
+# Build directory
 /build
-/external
+
+# Dependencies
+/external/*
+!/external/SDL
+!/external/Unity
+!/external/cJSON
