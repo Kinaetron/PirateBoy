@@ -85,6 +85,91 @@ static void write_byte(CPU_Memory* memory, uint16_t* address, uint8_t data)
 	memory_write(memory, *address, data);
 }
 
+static uint8_t add_opcode(CPU_Memory* memory, uint8_t value)
+{
+	set_register_flag(memory, N, false);
+	set_register_flag(memory, H, ((memory->af.high & 0x0F) + (value & 0x0F)) > 0x0F);
+	set_register_flag(memory, C, ((uint16_t)memory->af.high + value) > 0xFF);
+	
+	memory->af.high += value;
+
+	set_register_flag(memory, Z, memory->af.high == 0);
+
+	return 4;
+}
+
+static uint8_t add_c_opcode(CPU_Memory* memory, uint8_t value)
+{
+	uint8_t c_flag = (uint8_t)get_register_flag(memory, C);
+
+	set_register_flag(memory, N, false);
+	set_register_flag(memory, H, ((memory->af.high & 0x0F) + (value & 0x0F) + c_flag) > 0x0F);
+	set_register_flag(memory, C, ((uint16_t)memory->af.high + value + c_flag) > 0xFF);
+
+
+	memory->af.high += value + c_flag;
+
+	set_register_flag(memory, Z, memory->af.high == 0);
+
+	return 4;
+}
+
+static uint8_t subtract_opcode(CPU_Memory* memory, uint8_t value)
+{
+	set_register_flag(memory, N, true);
+	set_register_flag(memory, H, (value & 0x0F) > (memory->af.high & 0x0F));
+	set_register_flag(memory, C, value > memory->af.high);
+
+	memory->af.high -= value;
+
+	set_register_flag(memory, Z, memory->af.high == 0);
+
+	return 4;
+}
+
+static uint8_t subtract_c_opcode(CPU_Memory* memory, uint8_t* value_1, uint8_t value_2)
+{
+	uint8_t a = *value_1;
+	uint8_t c_flag = (uint8_t)get_register_flag(memory, C);
+
+	set_register_flag(memory, N, true);
+	set_register_flag(memory, H, ((value_2 & 0x0F) + c_flag) > (a & 0x0F));
+	set_register_flag(memory, C, (value_2 + c_flag) > a);
+
+	a -= value_2 + c_flag;
+	*value_1 = a;
+
+	set_register_flag(memory, Z, a == 0);
+
+	return 4;
+}
+
+static uint8_t and_opcode(CPU_Memory* memory, uint8_t value)
+{
+	set_register_flag(memory, N, false);
+	set_register_flag(memory, H, true);
+	set_register_flag(memory, C, false);
+
+	memory->af.high &= value;
+
+	set_register_flag(memory, Z, memory->af.high == 0);
+
+	return 4;
+}
+
+static uint8_t xor_opcode(CPU_Memory* memory, uint8_t value)
+{
+	set_register_flag(memory, N, false);
+	set_register_flag(memory, H, false);
+	set_register_flag(memory, C, false);
+
+	memory->af.high ^= value;
+
+	set_register_flag(memory, Z, memory->af.high == 0);
+
+	return 4;
+}
+
 static uint8_t opcode_0x01(CPU_Memory* memory)
 {
 	memory->bc.value = fetch_two_bytes(memory, &memory->program_counter).value;
@@ -1182,666 +1267,217 @@ static uint8_t opcode_0x7F(CPU_Memory* memory)
 	return 4;
 }
 
-static uint8_t opcode_0x80(CPU_Memory* memory)
-{
-	set_register_flag(memory, N, false);
-	set_register_flag(memory, H, ((memory->af.high & 0x0F) + (memory->bc.high & 0x0F)) > 0x0F);
-	set_register_flag(memory, C, ((uint16_t)memory->af.high + memory->bc.high) > 0xFF);
-
-	memory->af.high += memory->bc.high;
-
-	set_register_flag(memory, Z, memory->af.high == 0);
-
-	return 4;
+static uint8_t opcode_0x80(CPU_Memory* memory) {
+	return add_opcode(memory, memory->bc.high);
 }
 
-static uint8_t opcode_0x81(CPU_Memory* memory)
-{
-	set_register_flag(memory, N, false);
-	set_register_flag(memory, H, ((memory->af.high & 0x0F) + (memory->bc.low & 0x0F)) > 0x0F);
-	set_register_flag(memory, C, ((uint16_t)memory->af.high + memory->bc.low) > 0xFF);
-
-	memory->af.high += memory->bc.low;
-
-	set_register_flag(memory, Z, memory->af.high == 0);
-
-	return 4;
+static uint8_t opcode_0x81(CPU_Memory* memory) {
+	return add_opcode(memory, memory->bc.low);
 }
 
-static uint8_t opcode_0x82(CPU_Memory* memory)
-{
-	set_register_flag(memory, N, false);
-	set_register_flag(memory, H, ((memory->af.high & 0x0F) + (memory->de.high & 0x0F)) > 0x0F);
-	set_register_flag(memory, C, ((uint16_t)memory->af.high + memory->de.high) > 0xFF);
-
-	memory->af.high += memory->de.high;
-
-	set_register_flag(memory, Z, memory->af.high == 0);
-
-	return 4;
+static uint8_t opcode_0x82(CPU_Memory* memory) {
+	return add_opcode(memory, memory->de.high);
 }
 
-static uint8_t opcode_0x83(CPU_Memory* memory)
-{
-	set_register_flag(memory, N, false);
-	set_register_flag(memory, H, ((memory->af.high & 0x0F) + (memory->de.low & 0x0F)) > 0x0F);
-	set_register_flag(memory, C, ((uint16_t)memory->af.high + memory->de.low) > 0xFF);
-
-	memory->af.high += memory->de.low;
-
-	set_register_flag(memory, Z, memory->af.high == 0);
-
-	return 4;
+static uint8_t opcode_0x83(CPU_Memory* memory) {
+	return add_opcode(memory, memory->de.low);
 }
 
-static uint8_t opcode_0x84(CPU_Memory* memory)
-{
-	set_register_flag(memory, N, false);
-	set_register_flag(memory, H, ((memory->af.high & 0x0F) + (memory->hl.high & 0x0F)) > 0x0F);
-	set_register_flag(memory, C, ((uint16_t)memory->af.high + memory->hl.high) > 0xFF);
-
-	memory->af.high += memory->hl.high;
-
-	set_register_flag(memory, Z, memory->af.high == 0);
-
-	return 4;
+static uint8_t opcode_0x84(CPU_Memory* memory) {
+	return add_opcode(memory, memory->hl.high);
 }
 
-static uint8_t opcode_0x85(CPU_Memory* memory)
-{
-	set_register_flag(memory, N, false);
-	set_register_flag(memory, H, ((memory->af.high & 0x0F) + (memory->hl.low & 0x0F)) > 0x0F);
-	set_register_flag(memory, C, ((uint16_t)memory->af.high + memory->hl.low) > 0xFF);
-
-	memory->af.high += memory->hl.low;
-
-	set_register_flag(memory, Z, memory->af.high == 0);
-
-	return 4;
+static uint8_t opcode_0x85(CPU_Memory* memory) {
+	return add_opcode(memory, memory->hl.low);
 }
 
 static uint8_t opcode_0x86(CPU_Memory* memory)
 {
 	uint8_t memory_value = memory_read(memory, memory->hl.value);
-
-	set_register_flag(memory, N, false);
-	set_register_flag(memory, H, ((memory->af.high & 0x0F) + (memory_value & 0x0F)) > 0x0F);
-	set_register_flag(memory, C, ((uint16_t)memory->af.high + memory_value) > 0xFF);
-
-	memory->af.high += memory_value;
-
-	set_register_flag(memory, Z, memory->af.high == 0);
-
-	return 4;
-}
-
-static uint8_t opcode_0x87(CPU_Memory* memory)
-{
-	set_register_flag(memory, N, false);
-	set_register_flag(memory, H, ((memory->af.high & 0x0F) + (memory->af.high & 0x0F)) > 0x0F);
-	set_register_flag(memory, C, ((uint16_t)memory->af.high + memory->af.high) > 0xFF);
-
-	memory->af.high += memory->af.high;
-
-	set_register_flag(memory, Z, memory->af.high == 0);
-
-	return 4;
-}
-
-static uint8_t opcode_0x88(CPU_Memory* memory)
-{
-	uint8_t c_flag = (uint8_t)get_register_flag(memory, C);
-
-	set_register_flag(memory, N, false);
-	set_register_flag(memory, H, ((memory->af.high & 0x0F) + (memory->bc.high & 0x0F) + c_flag) > 0x0F);
-	set_register_flag(memory, C, ((uint16_t)memory->af.high + memory->bc.high + c_flag) > 0xFF);
-
-	memory->af.high += memory->bc.high + c_flag;
-
-	set_register_flag(memory, Z, memory->af.high == 0);
-
-	return 4;
-}
-
-static uint8_t opcode_0x89(CPU_Memory* memory)
-{
-	uint8_t c_flag = (uint8_t)get_register_flag(memory, C);
-
-	set_register_flag(memory, N, false);
-	set_register_flag(memory, H, ((memory->af.high & 0x0F) + (memory->bc.low & 0x0F) + c_flag) > 0x0F);
-	set_register_flag(memory, C, ((uint16_t)memory->af.high + memory->bc.low + c_flag) > 0xFF);
-
-	memory->af.high += memory->bc.low + c_flag;
-
-	set_register_flag(memory, Z, memory->af.high == 0);
-
-	return 4;
-}
-
-static uint8_t opcode_0x8A(CPU_Memory* memory)
-{
-	uint8_t c_flag = (uint8_t)get_register_flag(memory, C);
-
-	set_register_flag(memory, N, false);
-	set_register_flag(memory, H, ((memory->af.high & 0x0F) + (memory->de.high & 0x0F) + c_flag) > 0x0F);
-	set_register_flag(memory, C, ((uint16_t)memory->af.high + memory->de.high + c_flag) > 0xFF);
-
-	memory->af.high += memory->de.high + c_flag;
-
-	set_register_flag(memory, Z, memory->af.high == 0);
-
-	return 4;
-}
-
-static uint8_t opcode_0x8B(CPU_Memory* memory)
-{
-	uint8_t c_flag = (uint8_t)get_register_flag(memory, C);
-
-	set_register_flag(memory, N, false);
-	set_register_flag(memory, H, ((memory->af.high & 0x0F) + (memory->de.low & 0x0F) + c_flag) > 0x0F);
-	set_register_flag(memory, C, ((uint16_t)memory->af.high + memory->de.low + c_flag) > 0xFF);
-
-	memory->af.high += memory->de.low + c_flag;
-
-	set_register_flag(memory, Z, memory->af.high == 0);
-
-	return 4;
-}
-
-static uint8_t opcode_0x8C(CPU_Memory* memory)
-{
-	uint8_t c_flag = (uint8_t)get_register_flag(memory, C);
-
-	set_register_flag(memory, N, false);
-	set_register_flag(memory, H, ((memory->af.high & 0x0F) + (memory->hl.high & 0x0F) + c_flag) > 0x0F);
-	set_register_flag(memory, C, ((uint16_t)memory->af.high + memory->hl.high + c_flag) > 0xFF);
-
-	memory->af.high += memory->hl.high + c_flag;
-
-	set_register_flag(memory, Z, memory->af.high == 0);
-
-	return 4;
-}
-
-static uint8_t opcode_0x8D(CPU_Memory* memory)
-{
-	uint8_t c_flag = (uint8_t)get_register_flag(memory, C);
-
-	set_register_flag(memory, N, false);
-	set_register_flag(memory, H, ((memory->af.high & 0x0F) + (memory->hl.low & 0x0F) + c_flag) > 0x0F);
-	set_register_flag(memory, C, ((uint16_t)memory->af.high + memory->hl.low + c_flag) > 0xFF);
-
-	memory->af.high += memory->hl.low + c_flag;
-
-	set_register_flag(memory, Z, memory->af.high == 0);
-
-	return 4;
-}
-
-static uint8_t opcode_0x8E(CPU_Memory* memory)
-{
-	uint8_t c_flag = (uint8_t)get_register_flag(memory, C);
-	uint8_t memory_value = memory_read(memory, memory->hl.value);
-
-	set_register_flag(memory, N, false);
-	set_register_flag(memory, H, ((memory->af.high & 0x0F) + (memory_value & 0x0F) + c_flag) > 0x0F);
-	set_register_flag(memory, C, ((uint16_t)memory->af.high + memory_value + c_flag) > 0xFF);
-
-	memory->af.high += memory_value + c_flag;
-
-	set_register_flag(memory, Z, memory->af.high == 0);
+	add_opcode(memory, memory_value);
 
 	return 8;
 }
 
-static uint8_t opcode_0x8F(CPU_Memory* memory)
-{
-	uint8_t c_flag = (uint8_t)get_register_flag(memory, C);
-
-	set_register_flag(memory, N, false);
-	set_register_flag(memory, H, ((memory->af.high & 0x0F) + (memory->af.high & 0x0F) + c_flag) > 0x0F);
-	set_register_flag(memory, C, ((uint16_t)memory->af.high + memory->af.high + c_flag) > 0xFF);
-
-	memory->af.high += memory->af.high + c_flag;
-
-	set_register_flag(memory, Z, memory->af.high == 0);
-
-	return 4;
+static uint8_t opcode_0x87(CPU_Memory* memory) {
+	return add_opcode(memory, memory->af.high);
 }
 
-static uint8_t opcode_0x90(CPU_Memory* memory)
-{
-	set_register_flag(memory, N, true);
-	set_register_flag(memory, H, (memory->bc.high & 0x0F) > (memory->af.high & 0x0F));
-	set_register_flag(memory, C, memory->bc.high > memory->af.high);
-
-	memory->af.high -= memory->bc.high;
-
-	set_register_flag(memory, Z, memory->af.high == 0);
-
-	return 4;
+static uint8_t opcode_0x88(CPU_Memory* memory) {
+	return add_c_opcode(memory, memory->bc.high);
 }
 
-static uint8_t opcode_0x91(CPU_Memory* memory)
-{
-	set_register_flag(memory, N, true);
-	set_register_flag(memory, H, (memory->bc.low & 0x0F) > (memory->af.high & 0x0F));
-	set_register_flag(memory, C, memory->bc.low > memory->af.high);
-
-	memory->af.high -= memory->bc.low;
-
-	set_register_flag(memory, Z, memory->af.high == 0);
-
-	return 4;
+static uint8_t opcode_0x89(CPU_Memory* memory) {
+	return add_c_opcode(memory, memory->bc.low);
 }
 
-static uint8_t opcode_0x92(CPU_Memory* memory)
-{
-	set_register_flag(memory, N, true);
-	set_register_flag(memory, H, (memory->de.high & 0x0F) > (memory->af.high & 0x0F));
-	set_register_flag(memory, C, memory->de.high > memory->af.high);
-
-	memory->af.high -= memory->de.high;
-
-	set_register_flag(memory, Z, memory->af.high == 0);
-
-	return 4;
+static uint8_t opcode_0x8A(CPU_Memory* memory) {
+	return add_c_opcode(memory, memory->de.high);
 }
 
-static uint8_t opcode_0x93(CPU_Memory* memory)
-{
-	set_register_flag(memory, N, true);
-	set_register_flag(memory, H, (memory->de.low & 0x0F) > (memory->af.high & 0x0F));
-	set_register_flag(memory, C, memory->de.low > memory->af.high);
-
-	memory->af.high -= memory->de.low;
-
-	set_register_flag(memory, Z, memory->af.high == 0);
-
-	return 4;
+static uint8_t opcode_0x8B(CPU_Memory* memory) {
+	return add_c_opcode(memory, memory->de.low);
 }
 
-static uint8_t opcode_0x94(CPU_Memory* memory)
-{
-	set_register_flag(memory, N, true);
-	set_register_flag(memory, H, (memory->hl.high & 0x0F) > (memory->af.high & 0x0F));
-	set_register_flag(memory, C, memory->hl.high > memory->af.high);
-
-	memory->af.high -= memory->hl.high;
-
-	set_register_flag(memory, Z, memory->af.high == 0);
-
-	return 4;
+static uint8_t opcode_0x8C(CPU_Memory* memory) {
+	return add_c_opcode(memory, memory->hl.high);
 }
 
-static uint8_t opcode_0x95(CPU_Memory* memory)
+static uint8_t opcode_0x8D(CPU_Memory* memory) {
+	return add_c_opcode(memory, memory->hl.low);
+}
+
+static uint8_t opcode_0x8E(CPU_Memory* memory)
 {
-	set_register_flag(memory, N, true);
-	set_register_flag(memory, H, (memory->hl.low & 0x0F) > (memory->af.high & 0x0F));
-	set_register_flag(memory, C, memory->hl.low > memory->af.high);
+	uint8_t memory_value = memory_read(memory, memory->hl.value);
+	add_c_opcode(memory, memory_value);
+	return 8;
+}
 
-	memory->af.high -= memory->hl.low;
+static uint8_t opcode_0x8F(CPU_Memory* memory) {
+	return add_c_opcode(memory, memory->af.high);
+}
 
-	set_register_flag(memory, Z, memory->af.high == 0);
+static uint8_t opcode_0x90(CPU_Memory* memory) {
+	return subtract_opcode(memory, memory->bc.high);
+}
 
-	return 4;
+static uint8_t opcode_0x91(CPU_Memory* memory) {
+	return subtract_opcode(memory, memory->bc.low);
+}
+
+static uint8_t opcode_0x92(CPU_Memory* memory) {
+	return subtract_opcode(memory, memory->de.high);
+}
+
+static uint8_t opcode_0x93(CPU_Memory* memory) {
+	return subtract_opcode(memory, memory->de.low);
+}
+
+static uint8_t opcode_0x94(CPU_Memory* memory) {
+	return subtract_opcode(memory, memory->hl.high);
+}
+
+static uint8_t opcode_0x95(CPU_Memory* memory) {
+	return subtract_opcode(memory, memory->hl.low);
 }
 
 static uint8_t opcode_0x96(CPU_Memory* memory)
 {
 	uint8_t memory_value = memory_read(memory, memory->hl.value);
-
-	set_register_flag(memory, N, true);
-	set_register_flag(memory, H, (memory_value & 0x0F) > (memory->af.high & 0x0F));
-	set_register_flag(memory, C, memory_value > memory->af.high);
-
-	memory->af.high -= memory_value;
-
-	set_register_flag(memory, Z, memory->af.high == 0);
+	subtract_opcode(memory, memory_value);
 
 	return 8;
 }
 
-static uint8_t opcode_0x97(CPU_Memory* memory)
-{
-	set_register_flag(memory, N, true);
-	set_register_flag(memory, H, false);
-	set_register_flag(memory, C, false);
-
-	memory->af.high = 0;
-
-	set_register_flag(memory, Z, true);
-
-	return 4;
+static uint8_t opcode_0x97(CPU_Memory* memory) {
+	return subtract_opcode(memory, memory->af.high);
 }
 
-static uint8_t opcode_0x98(CPU_Memory* memory)
-{
-	uint8_t c_flag = (uint8_t)get_register_flag(memory, C);
-
-	set_register_flag(memory, N, true);
-	set_register_flag(memory, H, ((memory->bc.high & 0x0F) + c_flag) > (memory->af.high & 0x0F));
-	set_register_flag(memory, C, (memory->bc.high + c_flag) > memory->af.high);
-
-	memory->af.high -= memory->bc.high + c_flag;
-
-	set_register_flag(memory, Z, memory->af.high == 0);
-
-	return 4;
+static uint8_t opcode_0x98(CPU_Memory* memory) {
+	return subtract_c_opcode(memory, &memory->af.high, memory->bc.high);
 }
 
-static uint8_t opcode_0x99(CPU_Memory* memory)
-{
-	uint8_t c_flag = (uint8_t)get_register_flag(memory, C);
-
-	set_register_flag(memory, N, true);
-	set_register_flag(memory, H, ((memory->bc.low & 0x0F) + c_flag) > (memory->af.high & 0x0F));
-	set_register_flag(memory, C, (memory->bc.low + c_flag) > memory->af.high);
-
-	memory->af.high -= memory->bc.low + c_flag;
-
-	set_register_flag(memory, Z, memory->af.high == 0);
-
-	return 4;
+static uint8_t opcode_0x99(CPU_Memory* memory) {
+	return subtract_c_opcode(memory, &memory->af.high, memory->bc.low);
 }
 
-static uint8_t opcode_0x9A(CPU_Memory* memory)
-{
-	uint8_t c_flag = (uint8_t)get_register_flag(memory, C);
-
-	set_register_flag(memory, N, true);
-	set_register_flag(memory, H, ((memory->de.high & 0x0F) + c_flag) > (memory->af.high & 0x0F));
-	set_register_flag(memory, C, (memory->de.high + c_flag) > memory->af.high);
-
-	memory->af.high -= memory->de.high + c_flag;
-
-	set_register_flag(memory, Z, memory->af.high == 0);
-
-	return 4;
+static uint8_t opcode_0x9A(CPU_Memory* memory) {
+	return subtract_c_opcode(memory, &memory->af.high, memory->de.high);
 }
 
-static uint8_t opcode_0x9B(CPU_Memory* memory)
-{
-	uint8_t c_flag = (uint8_t)get_register_flag(memory, C);
-
-	set_register_flag(memory, N, true);
-	set_register_flag(memory, H, ((memory->de.low & 0x0F) + c_flag) > (memory->af.high & 0x0F));
-	set_register_flag(memory, C, (memory->de.low + c_flag) > memory->af.high);
-
-	memory->af.high -= memory->de.low + c_flag;
-
-	set_register_flag(memory, Z, memory->af.high == 0);
-
-	return 4;
+static uint8_t opcode_0x9B(CPU_Memory* memory) {
+	return subtract_c_opcode(memory, &memory->af.high, memory->de.low);
 }
 
-static uint8_t opcode_0x9C(CPU_Memory* memory)
-{
-	uint8_t c_flag = (uint8_t)get_register_flag(memory, C);
-
-	set_register_flag(memory, N, true);
-	set_register_flag(memory, H, ((memory->hl.high & 0x0F) + c_flag) > (memory->af.high & 0x0F));
-	set_register_flag(memory, C, (memory->hl.high + c_flag) > memory->af.high);
-
-	memory->af.high -= memory->hl.high + c_flag;
-
-	set_register_flag(memory, Z, memory->af.high == 0);
-
-	return 4;
+static uint8_t opcode_0x9C(CPU_Memory* memory) {
+	return subtract_c_opcode(memory, &memory->af.high, memory->hl.high);
 }
 
-static uint8_t opcode_0x9D(CPU_Memory* memory)
-{
-	uint8_t c_flag = (uint8_t)get_register_flag(memory, C);
-
-	set_register_flag(memory, N, true);
-	set_register_flag(memory, H, ((memory->hl.low & 0x0F) + c_flag) > (memory->af.high & 0x0F));
-	set_register_flag(memory, C, (memory->hl.low + c_flag) > memory->af.high);
-
-	memory->af.high -= memory->hl.low + c_flag;
-
-	set_register_flag(memory, Z, memory->af.high == 0);
-
-	return 4;
+static uint8_t opcode_0x9D(CPU_Memory* memory) {
+	return subtract_c_opcode(memory, &memory->af.high, memory->hl.low);
 }
 
 static uint8_t opcode_0x9E(CPU_Memory* memory)
 {
-	uint8_t c_flag = (uint8_t)get_register_flag(memory, C);
 	uint8_t memory_value = memory_read(memory, memory->hl.value);
-
-	set_register_flag(memory, N, true);
-	set_register_flag(memory, H, ((memory_value & 0x0F) + c_flag) > (memory->af.high & 0x0F));
-	set_register_flag(memory, C, (memory_value + c_flag) > memory->af.high);
-
-	memory->af.high -= memory_value + c_flag;
-
-	set_register_flag(memory, Z, memory->af.high == 0);
+	subtract_c_opcode(memory, &memory->af.high, memory_value);
 
 	return 8;
 }
 
-static uint8_t opcode_0x9F(CPU_Memory* memory)
-{
-	uint8_t c_flag = (uint8_t)get_register_flag(memory, C);
-
-	set_register_flag(memory, N, true);
-	set_register_flag(memory, H, ((memory->af.high & 0x0F) + c_flag) > (memory->af.high & 0x0F));
-	set_register_flag(memory, C, (memory->af.high + c_flag) > memory->af.high);
-
-	memory->af.high -= memory->af.high + c_flag;
-
-	set_register_flag(memory, Z, memory->af.high == 0);
-
-	return 4;
+static uint8_t opcode_0x9F(CPU_Memory* memory) {
+	return subtract_c_opcode(memory, &memory->af.high, memory->af.high);
 }
 
-static uint8_t opcode_0xA0(CPU_Memory* memory)
-{
-	set_register_flag(memory, N, false);
-	set_register_flag(memory, H, true);
-	set_register_flag(memory, C, false);
-
-	memory->af.high &= memory->bc.high;
-
-	set_register_flag(memory, Z, memory->af.high == 0);
-
-	return 4;
+static uint8_t opcode_0xA0(CPU_Memory* memory) {
+	return and_opcode(memory, memory->bc.high);
 }
 
-static uint8_t opcode_0xA1(CPU_Memory* memory)
-{
-	set_register_flag(memory, N, false);
-	set_register_flag(memory, H, true);
-	set_register_flag(memory, C, false);
-
-	memory->af.high &= memory->bc.low;
-
-	set_register_flag(memory, Z, memory->af.high == 0);
-
-	return 4;
+static uint8_t opcode_0xA1(CPU_Memory* memory) {
+	return and_opcode(memory, memory->bc.low);
 }
 
-static uint8_t opcode_0xA2(CPU_Memory* memory)
-{
-	set_register_flag(memory, N, false);
-	set_register_flag(memory, H, true);
-	set_register_flag(memory, C, false);
-
-	memory->af.high &= memory->de.high;
-
-	set_register_flag(memory, Z, memory->af.high == 0);
-
-	return 4;
+static uint8_t opcode_0xA2(CPU_Memory* memory) {
+	return and_opcode(memory, memory->de.high);
 }
 
-static uint8_t opcode_0xA3(CPU_Memory* memory)
-{
-	set_register_flag(memory, N, false);
-	set_register_flag(memory, H, true);
-	set_register_flag(memory, C, false);
-
-	memory->af.high &= memory->de.low;
-
-	set_register_flag(memory, Z, memory->af.high == 0);
-
-	return 4;
+static uint8_t opcode_0xA3(CPU_Memory* memory) {
+	return and_opcode(memory, memory->de.low);
 }
 
-static uint8_t opcode_0xA4(CPU_Memory* memory)
-{
-	set_register_flag(memory, N, false);
-	set_register_flag(memory, H, true);
-	set_register_flag(memory, C, false);
-
-	memory->af.high &= memory->hl.high;
-
-	set_register_flag(memory, Z, memory->af.high == 0);
-
-	return 4;
+static uint8_t opcode_0xA4(CPU_Memory* memory) {
+	return and_opcode(memory, memory->hl.high);
 }
 
-static uint8_t opcode_0xA5(CPU_Memory* memory)
-{
-	set_register_flag(memory, N, false);
-	set_register_flag(memory, H, true);
-	set_register_flag(memory, C, false);
-
-	memory->af.high &= memory->hl.low;
-
-	set_register_flag(memory, Z, memory->af.high == 0);
-
-	return 4;
+static uint8_t opcode_0xA5(CPU_Memory* memory) {
+	return and_opcode(memory, memory->hl.low);
 }
 
 static uint8_t opcode_0xA6(CPU_Memory* memory)
 {
-	set_register_flag(memory, N, false);
-	set_register_flag(memory, H, true);
-	set_register_flag(memory, C, false);
-
-	memory->af.high &= memory_read(memory, memory->hl.value);
-
-	set_register_flag(memory, Z, memory->af.high == 0);
+	and_opcode(memory, memory_read(memory, memory->hl.value));
 
 	return 8;
 }
 
-static uint8_t opcode_0xA7(CPU_Memory* memory)
-{
-	set_register_flag(memory, N, false);
-	set_register_flag(memory, H, true);
-	set_register_flag(memory, C, false);
-
-	memory->af.high &= memory->af.high;
-
-	set_register_flag(memory, Z, memory->af.high == 0);
-
-	return 4;
+static uint8_t opcode_0xA7(CPU_Memory* memory) {
+	return and_opcode(memory, memory->af.high);
 }
 
-static uint8_t opcode_0xA8(CPU_Memory* memory)
-{
-	set_register_flag(memory, N, false);
-	set_register_flag(memory, H, false);
-	set_register_flag(memory, C, false);
-
-	memory->af.high ^= memory->bc.high;
-
-	set_register_flag(memory, Z, memory->af.high == 0);
-
-	return 4;
+static uint8_t opcode_0xA8(CPU_Memory* memory) {
+	return xor_opcode(memory, memory->bc.high);
 }
 
-static uint8_t opcode_0xA9(CPU_Memory* memory)
-{
-	set_register_flag(memory, N, false);
-	set_register_flag(memory, H, false);
-	set_register_flag(memory, C, false);
-
-	memory->af.high ^= memory->bc.low;
-
-	set_register_flag(memory, Z, memory->af.high == 0);
-
-	return 4;
+static uint8_t opcode_0xA9(CPU_Memory* memory) {
+	return xor_opcode(memory, memory->bc.low);
 }
 
-static uint8_t opcode_0xAA(CPU_Memory* memory)
-{
-	set_register_flag(memory, N, false);
-	set_register_flag(memory, H, false);
-	set_register_flag(memory, C, false);
-
-	memory->af.high ^= memory->de.high;
-
-	set_register_flag(memory, Z, memory->af.high == 0);
-
-	return 4;
+static uint8_t opcode_0xAA(CPU_Memory* memory) {
+	return xor_opcode(memory, memory->de.high);
 }
 
-static uint8_t opcode_0xAB(CPU_Memory* memory)
-{
-	set_register_flag(memory, N, false);
-	set_register_flag(memory, H, false);
-	set_register_flag(memory, C, false);
-
-	memory->af.high ^= memory->de.low;
-
-	set_register_flag(memory, Z, memory->af.high == 0);
-
-	return 4;
+static uint8_t opcode_0xAB(CPU_Memory* memory) {
+	return xor_opcode(memory, memory->de.low);
 }
 
-static uint8_t opcode_0xAC(CPU_Memory* memory)
-{
-	set_register_flag(memory, N, false);
-	set_register_flag(memory, H, false);
-	set_register_flag(memory, C, false);
-
-	memory->af.high ^= memory->hl.high;
-
-	set_register_flag(memory, Z, memory->af.high == 0);
-
-	return 4;
+static uint8_t opcode_0xAC(CPU_Memory* memory) {
+	return xor_opcode(memory, memory->hl.high);
 }
 
-static uint8_t opcode_0xAD(CPU_Memory* memory)
-{
-	set_register_flag(memory, N, false);
-	set_register_flag(memory, H, false);
-	set_register_flag(memory, C, false);
-
-	memory->af.high ^= memory->hl.low;
-
-	set_register_flag(memory, Z, memory->af.high == 0);
-
-	return 4;
+static uint8_t opcode_0xAD(CPU_Memory* memory) {
+	return xor_opcode(memory, memory->hl.low);
 }
 
 static uint8_t opcode_0xAE(CPU_Memory* memory)
 {
-	set_register_flag(memory, N, false);
-	set_register_flag(memory, H, false);
-	set_register_flag(memory, C, false);
-
-	memory->af.high ^= memory_read(memory, memory->hl.value);
-
-	set_register_flag(memory, Z, memory->af.high == 0);
+	xor_opcode(memory, memory_read(memory, memory->hl.value));
 
 	return 8;
 }
 
-static uint8_t opcode_0xAF(CPU_Memory* memory)
-{
-	set_register_flag(memory, N, false);
-	set_register_flag(memory, H, false);
-	set_register_flag(memory, C, false);
-
-	memory->af.high ^= memory->af.high;
-
-	set_register_flag(memory, Z, memory->af.high == 0);
-
-	return 8;
+static uint8_t opcode_0xAF(CPU_Memory* memory) {
+	xor_opcode(memory, memory->af.high);
 }
 
 static uint8_t opcode_0xB0(CPU_Memory* memory)
