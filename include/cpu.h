@@ -11,6 +11,5 @@ bool cpu_is_halted(void);
 bool cpu_interrupt_master_enable(void);
 bool cpu_interrupt_master_pending(void);
 uint8_t cpu_step(CPU_Memory* memory);
-void cpu_set_interrupt_master_enable(bool value);
 
 #endif

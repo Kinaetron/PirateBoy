@@ -55,8 +55,6 @@ static void apply_state(CPU_Memory* memory, cJSON* state)
 
 	memory->flat[INTERRUPT_FLAG_ADDR] = 0;
 
-	//cpu_set_interrupt_master_enable(cJSON_GetObjectItem(state, "ime")->valueint != 0);
-
 	cJSON* ram = cJSON_GetObjectItem(state, "ram");
 	cJSON* entry;
 

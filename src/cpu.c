@@ -25,10 +25,6 @@ bool cpu_interrupt_master_pending(void) {
 	return interrupt_enable_pending;
 }
 
-void cpu_set_interrupt_master_enable(bool value) {
-	interrupt_master_enable = value;
-}
-
 static bool get_register_flag(CPU_Memory* memory, Flag flag) {
 	return (memory->af.low >> flag) & 1;
 }
@@ -2433,11 +2429,9 @@ static uint8_t opcode_0xE1(CPU_Memory* memory)
 
 static uint8_t opcode_0xE2(CPU_Memory* memory)
 {
-	uint8_t c_flag = (uint8_t) get_register_flag(memory, C);
-
 	memory16 memory_address;
 	memory_address.high = 0xFF;
-	memory_address.low = c_flag;
+	memory_address.low = memory->bc.low;
 
 	memory_write(memory, memory_address.value, memory->af.high);
 
@@ -2546,17 +2540,16 @@ static uint8_t opcode_0xF0(CPU_Memory* memory)
 static uint8_t opcode_0xF1(CPU_Memory* memory)
 {
 	memory->af = fetch_two_bytes(memory, &memory->stack_pointer);
+	memory->af.low &= 0xF0;
 
 	return 12;
 }
 
 static uint8_t opcode_0xF2(CPU_Memory* memory)
 {
-	uint8_t c_flag = (uint8_t)get_register_flag(memory, C);
-
 	memory16 address;
 	address.high = 0xFF;
-	address.low = c_flag;
+	address.low = memory->bc.low;
 
 	memory->af.high = memory_read(memory, address.value);
 
