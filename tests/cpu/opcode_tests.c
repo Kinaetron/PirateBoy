@@ -188,7 +188,7 @@ static void run_opcode_test_file(const char* filename)
 		cJSON* initial = cJSON_GetObjectItem(test_case, "initial");
 		apply_state(memory, initial);
 
-		cpu_step(memory, false);
+		cpu_step(memory);
 
 		cJSON* final_state = cJSON_GetObjectItem(test_case, "final");
 		char detail[128];

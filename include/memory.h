@@ -71,5 +71,6 @@ uint8_t memory_read(CPU_Memory* memory, uint16_t address);
 void memory_write(CPU_Memory* memory, uint16_t address, uint8_t data);
 void memory_divider_register_incrementer(CPU_Memory* memory);
 void set_if_interrupt(CPU_Memory* memory, Interrupt_Flag flag, bool value);
+bool is_pending(CPU_Memory* memory);
 
 #endif

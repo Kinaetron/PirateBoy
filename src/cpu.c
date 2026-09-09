@@ -2663,51 +2663,7 @@ static uint8_t opcode_0xFF(CPU_Memory* memory)
 	return 16;
 }
 
-static const uint16_t interrupt_vectors[5] =
-{
-	0x0040, // VBlank
-	0x0048, // LCD STAT
-	0x0050, // Timer
-	0x0058, // Serial
-	0x0060  // Joypad
-};
-
-static uint8_t is_pending(CPU_Memory* memory) {
-	return memory->flat[INTERRUPT_ENABLE_ADDR] & memory->flat[INTERRUPT_FLAG_ADDR] & 0x1F;
-}
-
-static uint8_t handle_interrupts(CPU_Memory* memory)
-{
-	if (interrupt_master_enable)
-	{
-		if (is_pending(memory) != 0)
-		{
-			for (int i = 0; i < 5; i++)
-			{
-				if (get_if_interrupt(memory, (Interrupt_Flag)i) && 
-					get_ie_interrupt(memory, (Interrupt_Flag)i))
-				{
-					set_if_interrupt(memory, (Interrupt_Flag)i, false);
-					interrupt_master_enable = false;
-
-					memory16 return_address;
-					return_address.value = memory->program_counter.value;
-
-					write_byte(memory, &memory->stack_pointer, return_address.high);
-					write_byte(memory, &memory->stack_pointer, return_address.low);
-
-					memory->program_counter.value = interrupt_vectors[i];
-
-					return 20;
-				}
-			}
-		}
-	}
-
-	return 0;
-}
-
-uint8_t cpu_step(CPU_Memory* memory, bool interrupt_enabled)
+uint8_t cpu_step(CPU_Memory* memory)
 {
 	if (interrupt_enable_pending)
 	{
@@ -2722,15 +2678,6 @@ uint8_t cpu_step(CPU_Memory* memory, bool interrupt_enabled)
 		}
 		else {
 			return 4;
-		}
-	}
-
-	if (interrupt_enabled)
-	{
-		uint8_t interrupt_cycles = handle_interrupts(memory);
-
-		if (interrupt_cycles != 0) {
-			return interrupt_cycles;
 		}
 	}
 

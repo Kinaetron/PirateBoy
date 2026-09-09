@@ -18,8 +18,10 @@ target_include_directories(cjson PUBLIC
 add_library(PirateBoyCore STATIC
     src/cpu.c
     src/timer.c
+    src/interrupt.c
     include/cpu.h
     include/timer.h
+    include/interrupt.h
     include/memory.h
 )
 
@@ -75,9 +77,11 @@ source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES
     src/timer.c
     src/memory.c
     src/memory_conformance.c
+    src/interrupt.c
     include/cpu.h
     include/timer.h
     include/memory.h
+    include/interrupt.h
 )
 
 enable_testing()
