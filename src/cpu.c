@@ -235,6 +235,23 @@ static uint8_t restart_opcode(CPU_Memory* memory, uint8_t low)
 	return 16;
 }
 
+static void do_return_opcode(CPU_Memory* memory) {
+	memory->program_counter = fetch_two_bytes(memory, &memory->stack_pointer);
+}
+
+static uint8_t conditional_return_opcode(CPU_Memory* memory, Flag flag, bool expected)
+{
+	bool flag_value = get_register_flag(memory, flag);
+
+	if (flag_value == expected)
+	{
+		do_return_opcode(memory);
+		return 20;
+	}
+
+	return 8;
+}
+
 static uint8_t opcode_0x01(CPU_Memory* memory)
 {
 	memory->bc.value = fetch_two_bytes(memory, &memory->program_counter).value;
@@ -1493,19 +1510,8 @@ static uint8_t opcode_0xBF(CPU_Memory* memory) {
 	return compare_opcode(memory, memory->af.high);
 }
 
-static uint8_t opcode_0xC0(CPU_Memory* memory)
-{
-	bool z_flag = get_register_flag(memory, Z);
-
-	if (!z_flag)
-	{
-		uint16_t memory_value = fetch_two_bytes(memory, &memory->stack_pointer).value;
-		memory->program_counter.value = memory_value;
-
-		return 20;
-	}
-
-	return 8;
+static uint8_t opcode_0xC0(CPU_Memory* memory) {
+	return conditional_return_opcode(memory, Z, false);
 }
 
 static uint8_t opcode_0xC1(CPU_Memory* memory)
@@ -1574,19 +1580,8 @@ static uint8_t opcode_0xC7(CPU_Memory* memory) {
 	return restart_opcode(memory,0x00);
 }
 
-static uint8_t opcode_0xC8(CPU_Memory* memory)
-{
-	bool z_flag = get_register_flag(memory, Z);
-
-	if (z_flag)
-	{
-		uint16_t memory_value = fetch_two_bytes(memory, &memory->stack_pointer).value;
-		memory->program_counter.value = memory_value;
-
-		return 20;
-	}
-
-	return 8;
+static uint8_t opcode_0xC8(CPU_Memory* memory) {
+	return conditional_return_opcode(memory, Z, true);
 }
 
 static uint8_t opcode_0xC9(CPU_Memory* memory)
@@ -1652,19 +1647,8 @@ static uint8_t opcode_0xCF(CPU_Memory* memory) {
 	return restart_opcode(memory, 0x08);
 }
 
-static uint8_t opcode_0xD0(CPU_Memory* memory)
-{
-	bool c_flag = get_register_flag(memory, C);
-
-	if (!c_flag)
-	{
-		uint16_t memory_value = fetch_two_bytes(memory, &memory->stack_pointer).value;
-		memory->program_counter.value = memory_value;
-
-		return 20;
-	}
-
-	return 8;
+static uint8_t opcode_0xD0(CPU_Memory* memory) {
+	return conditional_return_opcode(memory, C, false);
 }
 
 static uint8_t opcode_0xD1(CPU_Memory* memory)
