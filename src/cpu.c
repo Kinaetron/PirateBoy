@@ -274,6 +274,34 @@ static uint8_t conditional_call_opcode(CPU_Memory* memory, Interrupt_Flag flag, 
 	return 12;
 }
 
+static uint8_t conditional_jump_relative_opcode(CPU_Memory* memory, Flag flag, bool expected)
+{
+	int8_t offset = (int8_t)fetch_byte(memory, &memory->program_counter);
+	bool flag_value = get_register_flag(memory, flag);
+
+	if (flag_value == expected)
+	{
+		memory->program_counter.value += offset;
+		return 12;
+	}
+
+	return 8;
+}
+
+static uint8_t conditional_jump_absolute_opcode(CPU_Memory* memory, Flag flag, bool expected)
+{
+	memory16 target = fetch_two_bytes(memory, &memory->program_counter);
+	bool flag_value = get_register_flag(memory, flag);
+
+	if (flag_value == expected)
+	{
+		memory->program_counter = target;
+		return 16;
+	}
+
+	return 12;
+}
+
 static uint8_t opcode_0x01(CPU_Memory* memory)
 {
 	memory->bc.value = fetch_two_bytes(memory, &memory->program_counter).value;
@@ -503,18 +531,8 @@ static uint8_t opcode_0x1F(CPU_Memory* memory)
 	return 4;
 }
 
-static uint8_t opcode_0x20(CPU_Memory* memory)
-{
-	bool z_flag = get_register_flag(memory, Z);
-	int8_t value = (int8_t)fetch_byte(memory, &memory->program_counter);
-
-	if (!z_flag)
-	{
-		memory->program_counter.value += value;
-		return 12;
-	}
-
-	return 8;
+static uint8_t opcode_0x20(CPU_Memory* memory) {
+	return conditional_jump_relative_opcode(memory, Z, false);
 }
 
 static uint8_t opcode_0x21(CPU_Memory* memory)
@@ -592,19 +610,8 @@ static uint8_t opcode_0x27(CPU_Memory* memory)
 	return 4;
 }
 
-static uint8_t opcode_0x28(CPU_Memory* memory)
-{
-	bool z_flag = get_register_flag(memory, Z);
-	int8_t jump_value = (int8_t)fetch_byte(memory, &memory->program_counter);
-
-	if (z_flag)
-	{
-		memory->program_counter.value += jump_value;
-
-		return 12;
-	}
-
-	return 8;
+static uint8_t opcode_0x28(CPU_Memory* memory) {
+	return conditional_jump_relative_opcode(memory, Z, true);
 }
 
 static uint8_t opcode_0x29(CPU_Memory* memory)
@@ -658,18 +665,8 @@ static uint8_t opcode_0x2F(CPU_Memory* memory)
 	return 4;
 }
 
-static uint8_t opcode_0x30(CPU_Memory* memory)
-{
-	bool c_flag = get_register_flag(memory, C);
-	int8_t value = (int8_t)fetch_byte(memory, &memory->program_counter);
-
-	if (!c_flag)
-	{
-		memory->program_counter.value += value;
-		return 12;
-	}
-
-	return 8;
+static uint8_t opcode_0x30(CPU_Memory* memory) {
+	return conditional_jump_relative_opcode(memory, C, false);
 }
 
 static uint8_t opcode_0x31(CPU_Memory* memory)
@@ -732,19 +729,8 @@ static uint8_t opcode_0x37(CPU_Memory* memory)
 	return 8;
 }
 
-static uint8_t opcode_0x38(CPU_Memory* memory)
-{
-	bool c_flag = get_register_flag(memory, C);
-	int8_t jump_value = (int8_t)fetch_byte(memory, &memory->program_counter);
-
-	if (c_flag)
-	{
-		memory->program_counter.value += jump_value;
-
-		return 12;
-	}
-
-	return 8;
+static uint8_t opcode_0x38(CPU_Memory* memory) {
+	return conditional_jump_relative_opcode(memory, C, true);
 }
 
 static uint8_t opcode_0x39(CPU_Memory* memory)
@@ -1543,18 +1529,8 @@ static uint8_t opcode_0xC1(CPU_Memory* memory)
 	return 12;
 }
 
-static uint8_t opcode_0xC2(CPU_Memory* memory)
-{
-	bool z_flag = get_register_flag(memory, Z);
-	uint16_t memory_value = fetch_two_bytes(memory, &memory->program_counter).value;
-
-	if (!z_flag)
-	{
-		memory->program_counter.value = memory_value;
-		return 16;
-	}
-
-	return 12;
+static uint8_t opcode_0xC2(CPU_Memory* memory) {
+	return conditional_jump_absolute_opcode(memory, Z, false);
 }
 
 static uint8_t opcode_0xC3(CPU_Memory* memory)
@@ -1600,18 +1576,8 @@ static uint8_t opcode_0xC9(CPU_Memory* memory)
 	return 16;
 }
 
-static uint8_t opcode_0xCA(CPU_Memory* memory)
-{
-	bool z_flag = get_register_flag(memory, Z);
-	memory16 memory_value = fetch_two_bytes(memory, &memory->program_counter);
-
-	if (z_flag)
-	{
-		memory->program_counter = memory_value;
-		return 16;
-	}
-
-	return 12;
+static uint8_t opcode_0xCA(CPU_Memory* memory) {
+	return conditional_jump_absolute_opcode(memory, Z, true);
 }
 
 static uint8_t opcode_0xCC(CPU_Memory* memory) {
@@ -1647,18 +1613,8 @@ static uint8_t opcode_0xD1(CPU_Memory* memory)
 	return 12;
 }
 
-static uint8_t opcode_0xD2(CPU_Memory* memory)
-{
-	bool c_flag = get_register_flag(memory, C);
-	uint16_t memory_value = fetch_two_bytes(memory, &memory->program_counter).value;
-
-	if (!c_flag)
-	{
-		memory->program_counter.value = memory_value;
-		return 16;
-	}
-
-	return 12;
+static uint8_t opcode_0xD2(CPU_Memory* memory) {
+	return conditional_jump_absolute_opcode(memory, C, false);
 }
 
 static uint8_t opcode_0xD4(CPU_Memory* memory) {
@@ -1712,18 +1668,8 @@ static uint8_t opcode_0xD9(CPU_Memory* memory)
 	return 16;
 }
 
-static uint8_t opcode_0xDA(CPU_Memory* memory)
-{
-	bool c_flag = get_register_flag(memory, C);
-	memory16 memory_value = fetch_two_bytes(memory, &memory->program_counter);
-
-	if (c_flag)
-	{
-		memory->program_counter = memory_value;
-		return 16;
-	}
-
-	return 12;
+static uint8_t opcode_0xDA(CPU_Memory* memory) {
+	return conditional_jump_absolute_opcode(memory, C, true);
 }
 
 static uint8_t opcode_0xDC(CPU_Memory* memory) {
