@@ -1,6 +1,10 @@
 #include "memory.h"
 #include <stdbool.h>
 
+bool is_pending(CPU_Memory* memory) {
+	return (memory->flat[INTERRUPT_ENABLE_ADDR] & memory->flat[INTERRUPT_FLAG_ADDR] & 0x1F) == 0;
+}
+
 uint8_t memory_read(CPU_Memory* memory, uint16_t address)
 {
 	if (address >= ECHO_RAM_START && address <= ECHO_RAM_END) {
