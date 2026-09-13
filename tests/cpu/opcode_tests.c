@@ -1,5 +1,5 @@
-#include "cpu.h"
 #include "memory.h"
+#include "cpu/cpu.h"
 
 #include <unity.h>
 #include <cJSON.h>

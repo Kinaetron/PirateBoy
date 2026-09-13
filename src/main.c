@@ -7,9 +7,9 @@
 #include <SDL3/SDL_main.h>
 #include <stdbool.h>
 
-#include "cpu.h"
 #include "timer.h"
 #include "memory.h"
+#include "cpu/cpu.h"
 
 static SDL_Window* window = NULL;
 static SDL_GPUDevice* gpu_device = NULL;
