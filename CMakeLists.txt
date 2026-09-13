@@ -17,13 +17,13 @@ target_include_directories(cjson PUBLIC
 
 add_library(PirateBoyCore STATIC
     src/cpu/cpu.c
-    src/cpu/instruction_set_1.c
-    src/cpu/instruction_set_2.c
+    src/cpu/opcodes.c
+    src/cpu/opcodes_cb.c
     src/timer.c
     src/interrupt.c
     include/cpu/cpu.h
-    include/cpu/instruction_set_1.h
-    include/cpu/instruction_set_2.h
+    include/cpu/opcodes.h
+    include/cpu/opcodes_cb.h
     include/timer.h
     include/interrupt.h
     include/memory.h
@@ -78,15 +78,15 @@ add_custom_command(TARGET PirateBoy POST_BUILD
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES
     src/main.c
     src/cpu/cpu.c
-    src/cpu/instruction_set_1.c
-    src/cpu/instruction_set_2.c
+    src/cpu/opcodes.c
+    src/cpu/opcodes_cb.c
     src/timer.c
     src/memory.c
     src/memory_conformance.c
     src/interrupt.c
     include/cpu/cpu.h
-    include/cpu/instruction_set_1.h
-    include/cpu/instruction_set_2.h
+    include/cpu/opcodes.h
+    include/cpu/opcodes_cb.h
     include/timer.h
     include/memory.h
     include/interrupt.h

@@ -1,6 +1,7 @@
 #include "memory.h"
 #include "cpu/cpu.h"
-#include "cpu/instruction_set_1.h"
+#include "cpu/opcodes.h"
+#include "cpu/opcodes_cb.h"
 
 
 void set_register_flag(CPU_Memory* memory, Flag flag, bool value)
@@ -39,7 +40,10 @@ uint8_t cpu_step(CPU_Memory* memory)
 {
 	uint8_t opcode = fetch_byte(memory, &memory->program_counter);
 
-	if (opcode != 0xCB) {
-		return instruction_set_1_step(memory, opcode);
+	if (opcode == 0xCB) {
+		return opcode_cb_step(memory);
+	}
+	else {
+		return opcode_step(memory, opcode);
 	}
 }

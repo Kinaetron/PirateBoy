@@ -1,6 +1,6 @@
 #include "memory.h"
 #include "cpu/cpu.h"
-#include "cpu/instruction_set_1.h"
+#include "cpu/opcodes.h"
 
 static bool is_halted;
 static bool interrupt_master_enable;
@@ -1854,7 +1854,7 @@ static uint8_t opcode_0xFF(CPU_Memory* memory) {
 	return restart_opcode(memory, 0x38);
 }
 
-uint8_t instruction_set_1_step(CPU_Memory* memory, uint8_t opcode)
+uint8_t opcode_step(CPU_Memory* memory, uint8_t opcode)
 {
 	if (interrupt_enable_pending)
 	{
