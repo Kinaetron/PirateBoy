@@ -1,6 +1,23 @@
 #include "cpu/cpu.h"
 #include "cpu/opcodes_cb.h"
 
+static uint8_t swap_nibbles_opcode(CPU_Memory* memory, uint8_t* value)
+{
+	uint8_t a = *value;
+	uint8_t nibble_left = (a << 4) & 0xF0;
+	uint8_t nibble_right = (a >> 4) & 0x0F;
+
+	a = nibble_left | nibble_right;
+	*value = a;
+
+	set_register_flag(memory, Z, a == 0x00);
+	set_register_flag(memory, N, false);
+	set_register_flag(memory, H, false);
+	set_register_flag(memory, C, false);
+
+	return 8;
+}
+
 static uint8_t rotate_bits_left(CPU_Memory* memory, uint8_t* value, uint8_t carry_bit, uint8_t flag_bit)
 {
 	uint8_t a = *value;
@@ -29,6 +46,38 @@ static uint8_t rotate_bits_right(CPU_Memory* memory, uint8_t* value, uint8_t car
 	set_register_flag(memory, C, flag_bit);
 
 	return 8;
+}
+
+static uint8_t shift_bits_right(CPU_Memory* memory, uint8_t* value, uint8_t bit_7, uint8_t carry_bit)
+{
+	uint8_t a = *value;
+
+	a = (a >> 1) | bit_7;
+	*value = a;
+
+	set_register_flag(memory, Z, a == 0x00);
+	set_register_flag(memory, N, false);
+	set_register_flag(memory, H, false);
+	set_register_flag(memory, C, carry_bit);
+
+	return 8;
+}
+
+static uint8_t shift_bits_right_opcode(CPU_Memory* memory, uint8_t* value)
+{
+	uint8_t a = *value;
+	uint8_t carry_bit = *value & 0x01;
+	uint8_t bit_7 = a & 0x80;
+
+	return shift_bits_right(memory, value, bit_7, carry_bit);
+}
+
+static uint8_t shift_bits_right_logical_opcode(CPU_Memory* memory, uint8_t* value)
+{
+	uint8_t a = *value;
+	uint8_t carry_bit = *value & 0x01;
+
+	return shift_bits_right(memory, value, 0x00, carry_bit);
 }
 
 static uint8_t rotate_bits_left_opcode(CPU_Memory* memory, uint8_t* value)
@@ -66,23 +115,6 @@ static uint8_t rotate_bits_left_flag_zero_opcode(CPU_Memory* memory, uint8_t* va
 	uint8_t carry_bit = (*value >> 7) & 0x01;
 
 	return rotate_bits_left(memory, value, 0, carry_bit);
-}
-
-static uint8_t shift_bits_right_opcode(CPU_Memory* memory, uint8_t* value)
-{
-	uint8_t a = *value;
-	uint8_t carry_bit = a & 0x01;
-	uint8_t bit_7 = a & 0x80;
-
-	a = (a >> 1) | bit_7;
-	*value = a;
-
-	set_register_flag(memory, Z, a == 0x00);
-	set_register_flag(memory, N, false);
-	set_register_flag(memory, H, false);
-	set_register_flag(memory, C, carry_bit);
-
-	return 8;
 }
 
 static uint8_t opcode_0x00(CPU_Memory* memory) {
@@ -313,6 +345,82 @@ static uint8_t opcode_0x2F(CPU_Memory* memory) {
 	return shift_bits_right_opcode(memory, &memory->af.high);
 }
 
+static uint8_t opcode_0x30(CPU_Memory* memory) {
+	return swap_nibbles_opcode(memory, &memory->bc.high);
+}
+
+static uint8_t opcode_0x31(CPU_Memory* memory) {
+	return swap_nibbles_opcode(memory, &memory->bc.low);
+}
+
+static uint8_t opcode_0x32(CPU_Memory* memory) {
+	return swap_nibbles_opcode(memory, &memory->de.high);
+}
+
+static uint8_t opcode_0x33(CPU_Memory* memory) {
+	return swap_nibbles_opcode(memory, &memory->de.low);
+}
+
+static uint8_t opcode_0x34(CPU_Memory* memory) {
+	return swap_nibbles_opcode(memory, &memory->hl.high);
+}
+
+static uint8_t opcode_0x35(CPU_Memory* memory) {
+	return swap_nibbles_opcode(memory, &memory->hl.low);
+}
+
+static uint8_t opcode_0x36(CPU_Memory* memory)
+{
+	uint8_t value = memory_read(memory, memory->hl.value);
+
+	swap_nibbles_opcode(memory, &value);
+	memory_write(memory, memory->hl.value, value);
+
+	return 16;
+}
+
+static uint8_t opcode_0x37(CPU_Memory* memory) {
+	return swap_nibbles_opcode(memory, &memory->af.high);
+}
+
+static uint8_t opcode_0x38(CPU_Memory* memory) {
+	return shift_bits_right_logical_opcode(memory, &memory->bc.high);
+}
+
+static uint8_t opcode_0x39(CPU_Memory* memory) {
+	return shift_bits_right_logical_opcode(memory, &memory->bc.low);
+}
+
+static uint8_t opcode_0x3A(CPU_Memory* memory) {
+	return shift_bits_right_logical_opcode(memory, &memory->de.high);
+}
+
+static uint8_t opcode_0x3B(CPU_Memory* memory) {
+	return shift_bits_right_logical_opcode(memory, &memory->de.low);
+}
+
+static uint8_t opcode_0x3C(CPU_Memory* memory) {
+	return shift_bits_right_logical_opcode(memory, &memory->hl.high);
+}
+
+static uint8_t opcode_0x3D(CPU_Memory* memory) {
+	return shift_bits_right_logical_opcode(memory, &memory->hl.low);
+}
+
+static uint8_t opcode_0x3E(CPU_Memory* memory)
+{
+	uint8_t value = memory_read(memory, memory->hl.value);
+
+	shift_bits_right_logical_opcode(memory, &value);
+	memory_write(memory, memory->hl.value, value);
+
+	return 16;
+}
+
+static uint8_t opcode_0x3F(CPU_Memory* memory) {
+	return shift_bits_right_logical_opcode(memory, &memory->af.high);
+}
+
 uint8_t opcode_cb_step(CPU_Memory* memory)
 {
 	uint8_t opcode = fetch_byte(memory, &memory->program_counter);
@@ -464,6 +572,54 @@ uint8_t opcode_cb_step(CPU_Memory* memory)
 			break;
 		case 0x2F:
 			cycles = opcode_0x2F(memory);
+			break;
+		case 0x30:
+			cycles = opcode_0x30(memory);
+			break;
+		case 0x31:
+			cycles = opcode_0x31(memory);
+			break;
+		case 0x32:
+			cycles = opcode_0x32(memory);
+			break;
+		case 0x33:
+			cycles = opcode_0x33(memory);
+			break;
+		case 0x34:
+			cycles = opcode_0x34(memory);
+			break;
+		case 0x35:
+			cycles = opcode_0x35(memory);
+			break;
+		case 0x36:
+			cycles = opcode_0x36(memory);
+			break;
+		case 0x37:
+			cycles = opcode_0x37(memory);
+			break;
+		case 0x38:
+			cycles = opcode_0x38(memory);
+			break;
+		case 0x39:
+			cycles = opcode_0x39(memory);
+			break;
+		case 0x3A:
+			cycles = opcode_0x3A(memory);
+			break;
+		case 0x3B:
+			cycles = opcode_0x3B(memory);
+			break;
+		case 0x3C:
+			cycles = opcode_0x3C(memory);
+			break;
+		case 0x3D:
+			cycles = opcode_0x3D(memory);
+			break;
+		case 0x3E:
+			cycles = opcode_0x3E(memory);
+			break;
+		case 0x3F:
+			cycles = opcode_0x3F(memory);
 			break;
 		default:
 			break;
