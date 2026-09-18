@@ -655,6 +655,80 @@ static uint8_t opcode_0x6F(CPU_Memory* memory) {
 	return bit_check(memory, memory->af.high, 5);
 }
 
+static uint8_t opcode_0x70(CPU_Memory* memory) {
+	return bit_check(memory, memory->bc.high, 6);
+}
+
+static uint8_t opcode_0x71(CPU_Memory* memory) {
+	return bit_check(memory, memory->bc.low, 6);
+}
+
+static uint8_t opcode_0x72(CPU_Memory* memory) {
+	return bit_check(memory, memory->de.high, 6);
+}
+
+static uint8_t opcode_0x73(CPU_Memory* memory) {
+	return bit_check(memory, memory->de.low, 6);
+}
+
+static uint8_t opcode_0x74(CPU_Memory* memory) {
+	return bit_check(memory, memory->hl.high, 6);
+}
+
+static uint8_t opcode_0x75(CPU_Memory* memory) {
+	return bit_check(memory, memory->hl.low, 6);
+}
+
+static uint8_t opcode_0x76(CPU_Memory* memory)
+{
+	uint8_t value = memory_read(memory, memory->hl.value);
+
+	bit_check(memory, value, 6);
+
+	return 12;
+}
+
+static uint8_t opcode_0x77(CPU_Memory* memory) {
+	return bit_check(memory, memory->af.high, 6);
+}
+
+static uint8_t opcode_0x78(CPU_Memory* memory) {
+	return bit_check(memory, memory->bc.high, 7);
+}
+
+static uint8_t opcode_0x79(CPU_Memory* memory) {
+	return bit_check(memory, memory->bc.low, 7);
+}
+
+static uint8_t opcode_0x7A(CPU_Memory* memory) {
+	return bit_check(memory, memory->de.high, 7);
+}
+
+static uint8_t opcode_0x7B(CPU_Memory* memory) {
+	return bit_check(memory, memory->de.low, 7);
+}
+
+static uint8_t opcode_0x7C(CPU_Memory* memory) {
+	return bit_check(memory, memory->hl.high, 7);
+}
+
+static uint8_t opcode_0x7D(CPU_Memory* memory) {
+	return bit_check(memory, memory->hl.low, 7);
+}
+
+static uint8_t opcode_0x7E(CPU_Memory* memory)
+{
+	uint8_t value = memory_read(memory, memory->hl.value);
+
+	bit_check(memory, value, 7);
+
+	return 12;
+}
+
+static uint8_t opcode_0x7F(CPU_Memory* memory) {
+	return bit_check(memory, memory->af.high, 7);
+}
+
 uint8_t opcode_cb_step(CPU_Memory* memory)
 {
 	uint8_t opcode = fetch_byte(memory, &memory->program_counter);
@@ -998,6 +1072,54 @@ uint8_t opcode_cb_step(CPU_Memory* memory)
 			break;
 		case 0x6F:
 			cycles = opcode_0x6F(memory);
+			break;
+		case 0x70:
+			cycles = opcode_0x70(memory);
+			break;
+		case 0x71:
+			cycles = opcode_0x71(memory);
+			break;
+		case 0x72:
+			cycles = opcode_0x72(memory);
+			break;
+		case 0x73:
+			cycles = opcode_0x73(memory);
+			break;
+		case 0x74:
+			cycles = opcode_0x74(memory);
+			break;
+		case 0x75:
+			cycles = opcode_0x75(memory);
+			break;
+		case 0x76:
+			cycles = opcode_0x76(memory);
+			break;
+		case 0x77:
+			cycles = opcode_0x77(memory);
+			break;
+		case 0x78:
+			cycles = opcode_0x78(memory);
+			break;
+		case 0x79:
+			cycles = opcode_0x79(memory);
+			break;
+		case 0x7A:
+			cycles = opcode_0x7A(memory);
+			break;
+		case 0x7B:
+			cycles = opcode_0x7B(memory);
+			break;
+		case 0x7C:
+			cycles = opcode_0x7C(memory);
+			break;
+		case 0x7D:
+			cycles = opcode_0x7D(memory);
+			break;
+		case 0x7E:
+			cycles = opcode_0x7E(memory);
+			break;
+		case 0x7F:
+			cycles = opcode_0x7F(memory);
 			break;
 		default:
 			break;
