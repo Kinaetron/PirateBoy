@@ -137,6 +137,14 @@ static uint8_t bit_one_check_opcode(CPU_Memory* memory, uint8_t value) {
 	return bit_check(memory, value, 1);
 }
 
+static uint8_t bit_two_check_opcode(CPU_Memory* memory, uint8_t value) {
+	return bit_check(memory, value, 2);
+}
+
+static uint8_t bit_three_check_opcode(CPU_Memory* memory, uint8_t value) {
+	return bit_check(memory, value, 3);
+}
+
 static uint8_t opcode_0x00(CPU_Memory* memory) {
 	return rotate_bits_left_opcode(memory, &memory->bc.high);
 }
@@ -517,6 +525,82 @@ static uint8_t opcode_0x4F(CPU_Memory* memory) {
 	return bit_one_check_opcode(memory, memory->af.high);
 }
 
+static uint8_t opcode_0x50(CPU_Memory* memory) {
+	return bit_two_check_opcode(memory, memory->bc.high);
+}
+
+static uint8_t opcode_0x51(CPU_Memory* memory) {
+	return bit_two_check_opcode(memory, memory->bc.low);
+}
+
+static uint8_t opcode_0x52(CPU_Memory* memory) {
+	return bit_two_check_opcode(memory, memory->de.high);
+}
+
+static uint8_t opcode_0x53(CPU_Memory* memory) {
+	return bit_two_check_opcode(memory, memory->de.low);
+}
+
+static uint8_t opcode_0x54(CPU_Memory* memory) {
+	return bit_two_check_opcode(memory, memory->hl.high);
+}
+
+static uint8_t opcode_0x55(CPU_Memory* memory) {
+	return bit_two_check_opcode(memory, memory->hl.low);
+}
+
+static uint8_t opcode_0x56(CPU_Memory* memory) 
+{
+	uint8_t value = memory_read(memory, memory->hl.value);
+
+	bit_two_check_opcode(memory, value);
+	memory_write(memory, memory->hl.value, value);
+
+	return 12;
+}
+
+static uint8_t opcode_0x57(CPU_Memory* memory) {
+	return bit_two_check_opcode(memory, memory->af.high);
+}
+
+static uint8_t opcode_0x58(CPU_Memory* memory) {
+	return bit_three_check_opcode(memory, memory->bc.high);
+}
+
+static uint8_t opcode_0x59(CPU_Memory* memory) {
+	return bit_three_check_opcode(memory, memory->bc.low);
+}
+
+static uint8_t opcode_0x5A(CPU_Memory* memory) {
+	return bit_three_check_opcode(memory, memory->de.high);
+}
+
+static uint8_t opcode_0x5B(CPU_Memory* memory) {
+	return bit_three_check_opcode(memory, memory->de.low);
+}
+
+static uint8_t opcode_0x5C(CPU_Memory* memory) {
+	return bit_three_check_opcode(memory, memory->hl.high);
+}
+
+static uint8_t opcode_0x5D(CPU_Memory* memory) {
+	return bit_three_check_opcode(memory, memory->hl.low);
+}
+
+static uint8_t opcode_0x5E(CPU_Memory* memory) 
+{
+	uint8_t value = memory_read(memory, memory->hl.value);
+
+	bit_three_check_opcode(memory, value);
+	memory_write(memory, memory->hl.value, value);
+
+	return 12;
+}
+
+static uint8_t opcode_0x5F(CPU_Memory* memory) {
+	return bit_three_check_opcode(memory, memory->af.high);
+}
+
 uint8_t opcode_cb_step(CPU_Memory* memory)
 {
 	uint8_t opcode = fetch_byte(memory, &memory->program_counter);
@@ -764,6 +848,54 @@ uint8_t opcode_cb_step(CPU_Memory* memory)
 			break;
 		case 0x4F:
 			cycles = opcode_0x4F(memory);
+			break;
+		case 0x50:
+			cycles = opcode_0x50(memory);
+			break;
+		case 0x51:
+			cycles = opcode_0x51(memory);
+			break;
+		case 0x52:
+			cycles = opcode_0x52(memory);
+			break;
+		case 0x53:
+			cycles = opcode_0x53(memory);
+			break;
+		case 0x54:
+			cycles = opcode_0x54(memory);
+			break;
+		case 0x55:
+			cycles = opcode_0x55(memory);
+			break;
+		case 0x56:
+			cycles = opcode_0x56(memory);
+			break;
+		case 0x57:
+			cycles = opcode_0x57(memory);
+			break;
+		case 0x58:
+			cycles = opcode_0x58(memory);
+			break;
+		case 0x59:
+			cycles = opcode_0x59(memory);
+			break;
+		case 0x5A:
+			cycles = opcode_0x5A(memory);
+			break;
+		case 0x5B:
+			cycles = opcode_0x5B(memory);
+			break;
+		case 0x5C:
+			cycles = opcode_0x5C(memory);
+			break;
+		case 0x5D:
+			cycles = opcode_0x5D(memory);
+			break;
+		case 0x5E:
+			cycles = opcode_0x5E(memory);
+			break;
+		case 0x5F:
+			cycles = opcode_0x5F(memory);
 			break;
 		default:
 			break;

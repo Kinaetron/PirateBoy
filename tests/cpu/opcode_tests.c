@@ -1502,6 +1502,70 @@ void test_sm83_opcode_0xCB4F(void) {
 	run_opcode_test_file(SM83_TEST_DATA_DIR "/cb 4f.json");
 }
 
+void test_sm83_opcode_0xCB50(void) {
+	run_opcode_test_file(SM83_TEST_DATA_DIR "/cb 50.json");
+}
+
+void test_sm83_opcode_0xCB51(void) {
+	run_opcode_test_file(SM83_TEST_DATA_DIR "/cb 51.json");
+}
+
+void test_sm83_opcode_0xCB52(void) {
+	run_opcode_test_file(SM83_TEST_DATA_DIR "/cb 52.json");
+}
+
+void test_sm83_opcode_0xCB53(void) {
+	run_opcode_test_file(SM83_TEST_DATA_DIR "/cb 53.json");
+}
+
+void test_sm83_opcode_0xCB54(void) {
+	run_opcode_test_file(SM83_TEST_DATA_DIR "/cb 54.json");
+}
+
+void test_sm83_opcode_0xCB55(void) {
+	run_opcode_test_file(SM83_TEST_DATA_DIR "/cb 55.json");
+}
+
+void test_sm83_opcode_0xCB56(void) {
+	run_opcode_test_file(SM83_TEST_DATA_DIR "/cb 56.json");
+}
+
+void test_sm83_opcode_0xCB57(void) {
+	run_opcode_test_file(SM83_TEST_DATA_DIR "/cb 57.json");
+}
+
+void test_sm83_opcode_0xCB58(void) {
+	run_opcode_test_file(SM83_TEST_DATA_DIR "/cb 58.json");
+}
+
+void test_sm83_opcode_0xCB59(void) {
+	run_opcode_test_file(SM83_TEST_DATA_DIR "/cb 59.json");
+}
+
+void test_sm83_opcode_0xCB5A(void) {
+	run_opcode_test_file(SM83_TEST_DATA_DIR "/cb 5a.json");
+}
+
+void test_sm83_opcode_0xCB5B(void) {
+	run_opcode_test_file(SM83_TEST_DATA_DIR "/cb 5b.json");
+}
+
+void test_sm83_opcode_0xCB5C(void) {
+	run_opcode_test_file(SM83_TEST_DATA_DIR "/cb 5c.json");
+}
+
+void test_sm83_opcode_0xCB5D(void) {
+	run_opcode_test_file(SM83_TEST_DATA_DIR "/cb 5d.json");
+}
+
+void test_sm83_opcode_0xCB5E(void) {
+	run_opcode_test_file(SM83_TEST_DATA_DIR "/cb 5e.json");
+}
+
+void test_sm83_opcode_0xCB5F(void) {
+	run_opcode_test_file(SM83_TEST_DATA_DIR "/cb 5f.json");
+}
+
 int main(void)
 {
 	UNITY_BEGIN();
@@ -1828,6 +1892,22 @@ int main(void)
 	RUN_TEST(test_sm83_opcode_0xCB4D);
 	RUN_TEST(test_sm83_opcode_0xCB4E);
 	RUN_TEST(test_sm83_opcode_0xCB4F);
+	RUN_TEST(test_sm83_opcode_0xCB50);
+	RUN_TEST(test_sm83_opcode_0xCB51);
+	RUN_TEST(test_sm83_opcode_0xCB52);
+	RUN_TEST(test_sm83_opcode_0xCB53);
+	RUN_TEST(test_sm83_opcode_0xCB54);
+	RUN_TEST(test_sm83_opcode_0xCB55);
+	RUN_TEST(test_sm83_opcode_0xCB56);
+	RUN_TEST(test_sm83_opcode_0xCB57);
+	RUN_TEST(test_sm83_opcode_0xCB58);
+	RUN_TEST(test_sm83_opcode_0xCB59);
+	RUN_TEST(test_sm83_opcode_0xCB5A);
+	RUN_TEST(test_sm83_opcode_0xCB5B);
+	RUN_TEST(test_sm83_opcode_0xCB5C);
+	RUN_TEST(test_sm83_opcode_0xCB5D);
+	RUN_TEST(test_sm83_opcode_0xCB5E);
+	RUN_TEST(test_sm83_opcode_0xCB5F);
 	return UNITY_END();
 
 }
