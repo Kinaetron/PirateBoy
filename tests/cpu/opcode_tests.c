@@ -19,16 +19,6 @@ void tearDown(void)
 	memory = NULL;
 }
 
-static void raw_memory_write(CPU_Memory* memory, uint16_t address, uint8_t value)
-{
-	if (address >= ECHO_RAM_START && address <= ECHO_RAM_END) {
-		memory->flat[address - (ECHO_RAM_START - WRAM_START)] = value;
-		return;
-	}
-
-	memory->flat[address] = value;
-}
-
 static uint8_t json_u8(cJSON* obj, const char* key) {
 	return (uint8_t)cJSON_GetObjectItem(obj, key)->valueint;
 }
@@ -64,7 +54,7 @@ static void apply_state(CPU_Memory* memory, cJSON* state)
 	{
 		uint16_t address = (uint16_t)cJSON_GetArrayItem(entry, 0)->valueint;
 		uint8_t value = (uint8_t)cJSON_GetArrayItem(entry, 1)->valueint;
-		raw_memory_write(memory, address, value);
+		memory_write(memory, address, value);
 	}
 }
 
