@@ -976,6 +976,82 @@ static uint8_t opcode_0xAF(CPU_Memory* memory) {
 	return set_bit_to_zero(memory, &memory->af.high, 5);
 }
 
+static uint8_t opcode_0xB0(CPU_Memory* memory) {
+	return set_bit_to_zero(memory, &memory->bc.high, 6);
+}
+
+static uint8_t opcode_0xB1(CPU_Memory* memory) {
+	return set_bit_to_zero(memory, &memory->bc.low, 6);
+}
+
+static uint8_t opcode_0xB2(CPU_Memory* memory) {
+	return set_bit_to_zero(memory, &memory->de.high, 6);
+}
+
+static uint8_t opcode_0xB3(CPU_Memory* memory) {
+	return set_bit_to_zero(memory, &memory->de.low, 6);
+}
+
+static uint8_t opcode_0xB4(CPU_Memory* memory) {
+	return set_bit_to_zero(memory, &memory->hl.high, 6);
+}
+
+static uint8_t opcode_0xB5(CPU_Memory* memory) {
+	return set_bit_to_zero(memory, &memory->hl.low, 6);
+}
+
+static uint8_t opcode_0xB6(CPU_Memory* memory) 
+{
+	uint8_t value = memory_read(memory, memory->hl.value);
+
+	set_bit_to_zero(memory, &value, 6);
+	memory_write(memory, memory->hl.value, value);
+
+	return 16;
+}
+
+static uint8_t opcode_0xB7(CPU_Memory* memory) {
+	return set_bit_to_zero(memory, &memory->af.high, 6);
+}
+
+static uint8_t opcode_0xB8(CPU_Memory* memory) {
+	return set_bit_to_zero(memory, &memory->bc.high, 7);
+}
+
+static uint8_t opcode_0xB9(CPU_Memory* memory) {
+	return set_bit_to_zero(memory, &memory->bc.low, 7);
+}
+
+static uint8_t opcode_0xBA(CPU_Memory* memory) {
+	return set_bit_to_zero(memory, &memory->de.high, 7);
+}
+
+static uint8_t opcode_0xBB(CPU_Memory* memory) {
+	return set_bit_to_zero(memory, &memory->de.low, 7);
+}
+
+static uint8_t opcode_0xBC(CPU_Memory* memory) {
+	return set_bit_to_zero(memory, &memory->hl.high, 7);
+}
+
+static uint8_t opcode_0xBD(CPU_Memory* memory) {
+	return set_bit_to_zero(memory, &memory->hl.low, 7);
+}
+
+static uint8_t opcode_0xBE(CPU_Memory* memory)
+{
+	uint8_t value = memory_read(memory, memory->hl.value);
+
+	set_bit_to_zero(memory, &value, 7);
+	memory_write(memory, memory->hl.value, value);
+
+	return 16;
+}
+
+static uint8_t opcode_0xBF(CPU_Memory* memory) {
+	return set_bit_to_zero(memory, &memory->af.high, 7);
+}
+
 uint8_t opcode_cb_step(CPU_Memory* memory)
 {
 	uint8_t opcode = fetch_byte(memory, &memory->program_counter);
@@ -1511,6 +1587,54 @@ uint8_t opcode_cb_step(CPU_Memory* memory)
 			break;
 		case 0xAF:
 			cycles = opcode_0xAF(memory);
+			break;
+		case 0xB0:
+			cycles = opcode_0xB0(memory);
+			break;
+		case 0xB1:
+			cycles = opcode_0xB1(memory);
+			break;
+		case 0xB2:
+			cycles = opcode_0xB2(memory);
+			break;
+		case 0xB3:
+			cycles = opcode_0xB3(memory);
+			break;
+		case 0xB4:
+			cycles = opcode_0xB4(memory);
+			break;
+		case 0xB5:
+			cycles = opcode_0xB5(memory);
+			break;
+		case 0xB6:
+			cycles = opcode_0xB6(memory);
+			break;
+		case 0xB7:
+			cycles = opcode_0xB7(memory);
+			break;
+		case 0xB8:
+			cycles = opcode_0xB8(memory);
+			break;
+		case 0xB9:
+			cycles = opcode_0xB9(memory);
+			break;
+		case 0xBA:
+			cycles = opcode_0xBA(memory);
+			break;
+		case 0xBB:
+			cycles = opcode_0xBB(memory);
+			break;
+		case 0xBC:
+			cycles = opcode_0xBC(memory);
+			break;
+		case 0xBD:
+			cycles = opcode_0xBD(memory);
+			break;
+		case 0xBE:
+			cycles = opcode_0xBE(memory);
+			break;
+		case 0xBF:
+			cycles = opcode_0xBF(memory);
 			break;
 		default:
 			break;
