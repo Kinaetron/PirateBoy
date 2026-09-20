@@ -1,5 +1,6 @@
-#include "cpu.h"
 #include "memory.h"
+#include "cpu/cpu.h"
+#include "cpu/opcodes.h"
 
 static bool is_halted;
 static bool interrupt_master_enable;
@@ -29,22 +30,6 @@ void cpu_set_interrupt_master_enable(bool value) {
 	interrupt_master_enable = value;
 }
 
-static bool get_register_flag(CPU_Memory* memory, Flag flag) {
-	return (memory->af.low >> flag) & 1;
-}
-
-static void set_register_flag(CPU_Memory* memory, Flag flag, bool value)
-{
-	if (value) {
-		memory->af.low |= (1 << flag);
-	}
-	else {
-		memory->af.low &= ~(1 << flag);
-	}
-
-	memory->af.low &= 0xF0;
-}
-
 static bool get_ie_interrupt(CPU_Memory* memory, Interrupt_Flag flag) {
 	return (memory->flat[INTERRUPT_ENABLE_ADDR] >> flag) & 1;
 }
@@ -63,22 +48,6 @@ static bool get_if_interrupt(CPU_Memory* memory, Interrupt_Flag flag) {
 	return (memory->flat[INTERRUPT_FLAG_ADDR] >> flag) & 1;
 }
 
-static uint8_t fetch_byte(CPU_Memory* memory, uint16_t* address)
-{
-	uint8_t value = memory_read(memory, *address);
-	*address = *address + 1;
-	return value;
-}
-
-static memory16 fetch_two_bytes(CPU_Memory* memory, uint16_t* address)
-{
-	memory16 result;
-	result.low = fetch_byte(memory, address);
-	result.high = fetch_byte(memory, address);
-
-	return result;
-}
-
 static void write_byte(CPU_Memory* memory, uint16_t* address, uint8_t data)
 {
 	*address = *address - 1;
@@ -90,7 +59,7 @@ static uint8_t add_opcode(CPU_Memory* memory, uint8_t value)
 	set_register_flag(memory, N, false);
 	set_register_flag(memory, H, ((memory->af.high & 0x0F) + (value & 0x0F)) > 0x0F);
 	set_register_flag(memory, C, ((uint16_t)memory->af.high + value) > 0xFF);
-	
+
 	memory->af.high += value;
 
 	set_register_flag(memory, Z, memory->af.high == 0);
@@ -317,7 +286,7 @@ static uint8_t opcode_0x02(CPU_Memory* memory)
 	return 8;
 }
 
-static uint8_t opcode_0x03(CPU_Memory* memory) 
+static uint8_t opcode_0x03(CPU_Memory* memory)
 {
 	memory->bc.value++;
 
@@ -391,7 +360,7 @@ static uint8_t opcode_0x0B(CPU_Memory* memory)
 }
 
 static uint8_t opcode_0x0C(CPU_Memory* memory) {
-	increment_opcode(memory, &memory->bc.low);
+	return increment_opcode(memory, &memory->bc.low);
 }
 
 static uint8_t opcode_0x0D(CPU_Memory* memory) {
@@ -589,12 +558,12 @@ static uint8_t opcode_0x27(CPU_Memory* memory)
 		offset |= low_byte_offset;
 	}
 
-	if (n_flag == false && a_value > 0x99 || c_flag == true) 
+	if (n_flag == false && a_value > 0x99 || c_flag == true)
 	{
 		offset |= high_byte_offset;
 		carry = true;
 	}
-	
+
 	if (n_flag) {
 		a_value -= offset;
 	}
@@ -695,7 +664,7 @@ static uint8_t opcode_0x34(CPU_Memory* memory)
 {
 
 	uint8_t value = memory_read(memory, memory->hl.value);
-	
+
 	increment_opcode(memory, &value);
 	memory_write(memory, memory->hl.value, value);
 
@@ -714,7 +683,7 @@ static uint8_t opcode_0x35(CPU_Memory* memory)
 
 static uint8_t opcode_0x36(CPU_Memory* memory)
 {
-	memory_write(memory, memory->hl.value, 
+	memory_write(memory, memory->hl.value,
 		fetch_byte(memory, &memory->program_counter));
 
 	return 8;
@@ -1445,7 +1414,7 @@ static uint8_t opcode_0xAE(CPU_Memory* memory)
 }
 
 static uint8_t opcode_0xAF(CPU_Memory* memory) {
-	xor_opcode(memory, memory->af.high);
+	return xor_opcode(memory, memory->af.high);
 }
 
 static uint8_t opcode_0xB0(CPU_Memory* memory) {
@@ -1561,7 +1530,7 @@ static uint8_t opcode_0xC6(CPU_Memory* memory)
 }
 
 static uint8_t opcode_0xC7(CPU_Memory* memory) {
-	return restart_opcode(memory,0x00);
+	return restart_opcode(memory, 0x00);
 }
 
 static uint8_t opcode_0xC8(CPU_Memory* memory) {
@@ -1885,7 +1854,7 @@ static uint8_t opcode_0xFF(CPU_Memory* memory) {
 	return restart_opcode(memory, 0x38);
 }
 
-uint8_t cpu_step(CPU_Memory* memory)
+uint8_t opcode_step(CPU_Memory* memory, uint8_t opcode)
 {
 	if (interrupt_enable_pending)
 	{
@@ -1903,7 +1872,6 @@ uint8_t cpu_step(CPU_Memory* memory)
 		}
 	}
 
-	uint8_t opcode = fetch_byte(memory, &memory->program_counter);
 	uint8_t cycles = 4;
 
 	switch (opcode)

@@ -1,4 +1,4 @@
-#include "cpu.h"
+#include "cpu/cpu.h"
 #include "interrupt.h"
 
 static const uint16_t interrupt_vectors[5] =
