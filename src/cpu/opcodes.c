@@ -210,7 +210,7 @@ static void do_return_opcode(Memory* memory, Register* registers) {
 
 static uint8_t conditional_return_opcode(Memory* memory, Register* registers, Flag flag, bool expected)
 {
-	bool flag_value = get_register_flag(memory, flag);
+	bool flag_value = get_register_flag(registers, flag);
 
 	if (flag_value == expected)
 	{
@@ -233,7 +233,7 @@ static uint8_t call_opcode(Memory* memory, Register* registers, memory16 jump_ta
 
 static uint8_t conditional_call_opcode(Memory* memory, Register* registers, Interrupt_Flag flag, bool expected)
 {
-	bool flag_value = get_register_flag(memory, flag);
+	bool flag_value = get_register_flag(registers, flag);
 	memory16 jump_target = fetch_two_bytes(memory, &registers->program_counter);
 
 	if (flag_value == expected) {
@@ -246,7 +246,7 @@ static uint8_t conditional_call_opcode(Memory* memory, Register* registers, Inte
 static uint8_t conditional_jump_relative_opcode(Memory* memory, Register* registers, Flag flag, bool expected)
 {
 	int8_t offset = (int8_t)fetch_byte(memory, &registers->program_counter);
-	bool flag_value = get_register_flag(memory, flag);
+	bool flag_value = get_register_flag(registers, flag);
 
 	if (flag_value == expected)
 	{
@@ -260,7 +260,7 @@ static uint8_t conditional_jump_relative_opcode(Memory* memory, Register* regist
 static uint8_t conditional_jump_absolute_opcode(Memory* memory, Register* registers, Flag flag, bool expected)
 {
 	memory16 target = fetch_two_bytes(memory, &registers->program_counter);
-	bool flag_value = get_register_flag(memory, flag);
+	bool flag_value = get_register_flag(registers, flag);
 
 	if (flag_value == expected)
 	{
@@ -424,15 +424,15 @@ static uint8_t opcode_0x16(Memory* memory, Register* registers)
 
 static uint8_t opcode_0x17(Memory* memory, Register* registers)
 {
-	uint8_t old_carry = get_register_flag(memory, C);
+	uint8_t old_carry = get_register_flag(registers, C);
 	uint8_t bit7 = (registers->af.high >> 7) & 1;
 
 	registers->af.high = (registers->af.high << 1) | old_carry;
 
-	set_register_flag(memory, Z, false);
-	set_register_flag(memory, N, false);
-	set_register_flag(memory, H, false);
-	set_register_flag(memory, C, bit7);
+	set_register_flag(registers, Z, false);
+	set_register_flag(registers, N, false);
+	set_register_flag(registers, H, false);
+	set_register_flag(registers, C, bit7);
 
 	return 4;
 }
@@ -447,9 +447,9 @@ static uint8_t opcode_0x18(Memory* memory, Register* registers)
 
 static uint8_t opcode_0x19(Memory* memory, Register* registers)
 {
-	set_register_flag(memory, N, false);
-	set_register_flag(memory, H, ((registers->hl.value & 0x0FFF) + (registers->de.value & 0x0FFF)) > 0x0FFF);
-	set_register_flag(memory, C, ((uint32_t)registers->hl.value + (uint32_t)registers->de.value) > 0xFFFF);
+	set_register_flag(registers, N, false);
+	set_register_flag(registers, H, ((registers->hl.value & 0x0FFF) + (registers->de.value & 0x0FFF)) > 0x0FFF);
+	set_register_flag(registers, C, ((uint32_t)registers->hl.value + (uint32_t)registers->de.value) > 0xFFFF);
 
 	registers->hl.value += registers->de.value;
 
@@ -487,7 +487,7 @@ static uint8_t opcode_0x1E(Memory* memory, Register* registers)
 
 static uint8_t opcode_0x1F(Memory* memory, Register* registers)
 {
-	uint8_t old_carry = get_register_flag(memory, C);
+	uint8_t old_carry = get_register_flag(registers, C);
 	uint8_t bit0 = registers->af.high & 0x01;
 
 	registers->af.high = (registers->af.high >> 1) | (old_carry << 7);
@@ -1231,7 +1231,7 @@ static uint8_t opcode_0x85(Register* registers) {
 static uint8_t opcode_0x86(Memory* memory, Register* registers)
 {
 	uint8_t memory_value = memory_read(memory, registers->hl.value);
-	add_opcode(memory, memory_value);
+	add_opcode(registers, memory_value);
 
 	return 8;
 }
@@ -1302,7 +1302,7 @@ static uint8_t opcode_0x95(Register* registers) {
 static uint8_t opcode_0x96(Memory* memory, Register* registers)
 {
 	uint8_t memory_value = memory_read(memory, registers->hl.value);
-	subtract_opcode(memory, memory_value);
+	subtract_opcode(registers, memory_value);
 
 	return 8;
 }
@@ -1338,7 +1338,7 @@ static uint8_t opcode_0x9D(Register* registers) {
 static uint8_t opcode_0x9E(Memory* memory, Register* registers)
 {
 	uint8_t memory_value = memory_read(memory, registers->hl.value);
-	subtract_c_opcode(memory, memory_value);
+	subtract_c_opcode(registers, memory_value);
 
 	return 8;
 }
@@ -1443,7 +1443,7 @@ static uint8_t opcode_0xB5(Register* registers) {
 
 static uint8_t opcode_0xB6(Memory* memory, Register* registers)
 {
-	or_opcode(memory, memory_read(memory, registers->hl.value));
+	or_opcode(registers, memory_read(memory, registers->hl.value));
 
 	return 8;
 }
@@ -1478,7 +1478,7 @@ static uint8_t opcode_0xBD(Register* registers) {
 
 static uint8_t opcode_0xBE(Memory* memory, Register* registers)
 {
-	compare_opcode(memory, memory_read(memory, registers->hl.value));
+	compare_opcode(registers, memory_read(memory, registers->hl.value));
 
 	return 8;
 }
@@ -1524,7 +1524,7 @@ static uint8_t opcode_0xC5(Memory* memory, Register* registers)
 static uint8_t opcode_0xC6(Memory* memory, Register* registers)
 {
 	uint8_t byte_value = fetch_byte(memory, &registers->program_counter);
-	add_opcode(memory, byte_value);
+	add_opcode(registers, byte_value);
 
 	return 8;
 }
@@ -1562,7 +1562,7 @@ static uint8_t opcode_0xCD(Memory* memory, Register* registers)
 
 static uint8_t opcode_0xCE(Memory* memory, Register* registers)
 {
-	add_c_opcode(memory, fetch_byte(memory, &registers->program_counter.value));
+	add_c_opcode(registers, fetch_byte(memory, &registers->program_counter.value));
 
 	return 8;
 }
@@ -1601,7 +1601,7 @@ static uint8_t opcode_0xD5(Memory* memory, Register* registers)
 static uint8_t opcode_0xD6(Memory* memory, Register* registers)
 {
 	uint8_t memory_value = fetch_byte(memory, &registers->program_counter);
-	subtract_opcode(memory, memory_value);
+	subtract_opcode(registers, memory_value);
 
 	return 8;
 }
@@ -1647,7 +1647,7 @@ static uint8_t opcode_0xDC(Memory* memory, Register* registers) {
 
 static uint8_t opcode_0xDE(Memory* memory, Register* registers)
 {
-	subtract_c_opcode(memory, fetch_byte(memory, &registers->program_counter));
+	subtract_c_opcode(registers, fetch_byte(memory, &registers->program_counter));
 
 	return 8;
 }
@@ -1697,7 +1697,7 @@ static uint8_t opcode_0xE5(Memory* memory, Register* registers)
 
 static uint8_t opcode_0xE6(Memory* memory, Register* registers)
 {
-	and_opcode(memory, fetch_byte(memory, &registers->program_counter));
+	and_opcode(registers, fetch_byte(memory, &registers->program_counter));
 
 	return 8;
 }
@@ -1711,10 +1711,10 @@ static uint8_t opcode_0xE8(Memory* memory, Register* registers)
 	uint8_t raw_byte = fetch_byte(memory, &registers->program_counter);
 	int8_t signed_offset = (int8_t)raw_byte;
 
-	set_register_flag(memory, Z, false);
-	set_register_flag(memory, N, false);
-	set_register_flag(memory, H, ((registers->stack_pointer & 0x0F) + (raw_byte & 0x0F)) > 0x0F);
-	set_register_flag(memory, C, ((registers->stack_pointer & 0xFF) + raw_byte) > 0xFF);
+	set_register_flag(registers, Z, false);
+	set_register_flag(registers, N, false);
+	set_register_flag(registers, H, ((registers->stack_pointer & 0x0F) + (raw_byte & 0x0F)) > 0x0F);
+	set_register_flag(registers, C, ((registers->stack_pointer & 0xFF) + raw_byte) > 0xFF);
 
 	registers->stack_pointer += signed_offset;
 
@@ -1738,7 +1738,7 @@ static uint8_t opcode_0xEA(Memory* memory, Register* registers)
 
 static uint8_t opcode_0xEE(Memory* memory, Register* registers)
 {
-	xor_opcode(memory, fetch_byte(memory, &registers->program_counter));
+	xor_opcode(registers, fetch_byte(memory, &registers->program_counter));
 
 	return 8;
 }
@@ -1797,7 +1797,7 @@ static uint8_t opcode_0xF5(Memory* memory, Register* registers)
 
 static uint8_t opcode_0xF6(Memory* memory, Register* registers)
 {
-	or_opcode(memory, fetch_byte(memory, &registers->program_counter));
+	or_opcode(registers, fetch_byte(memory, &registers->program_counter));
 
 	return 8;
 }
@@ -1811,10 +1811,10 @@ static uint8_t opcode_0xF8(Memory* memory, Register* registers)
 	uint8_t raw_byte = fetch_byte(memory, &registers->program_counter);
 	int8_t signed_offset = (int8_t)raw_byte;
 
-	set_register_flag(memory, Z, false);
-	set_register_flag(memory, N, false);
-	set_register_flag(memory, H, ((registers->stack_pointer & 0x0F) + (raw_byte & 0x0F)) > 0x0F);
-	set_register_flag(memory, C, ((registers->stack_pointer & 0xFF) + raw_byte) > 0xFF);
+	set_register_flag(registers, Z, false);
+	set_register_flag(registers, N, false);
+	set_register_flag(registers, H, ((registers->stack_pointer & 0x0F) + (raw_byte & 0x0F)) > 0x0F);
+	set_register_flag(registers, C, ((registers->stack_pointer & 0xFF) + raw_byte) > 0xFF);
 
 	registers->hl.value = signed_offset + registers->stack_pointer;
 
@@ -1845,7 +1845,7 @@ static uint8_t opcode_0xFB()
 
 static uint8_t opcode_0xFE(Memory* memory, Register* registers)
 {
-	compare_opcode(memory, fetch_byte(memory, &registers->program_counter));
+	compare_opcode(registers, fetch_byte(memory, &registers->program_counter));
 
 	return 8;
 }
@@ -2302,7 +2302,7 @@ uint8_t opcode_step(Memory* memory, Register* registers, uint8_t opcode)
 			cycles = opcode_0x8E(memory, registers);
 			break;
 		case 0x8F:
-			cycles = opcode_0x8F(memory);
+			cycles = opcode_0x8F(registers);
 			break;
 		case 0x90:
 			cycles = opcode_0x90(registers);

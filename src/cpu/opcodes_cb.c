@@ -121,7 +121,7 @@ static uint8_t rotate_bits_left_opcode(Memory* memory, Register* registers, uint
 static uint8_t rotate_bits_left_c_flag_opcode(Memory* memory, Register* registers, uint8_t* value)
 {
 	uint8_t carry_bit = (*value >> 7) & 0x01;
-	uint8_t c_flag = get_register_flag(memory, C);
+	uint8_t c_flag = get_register_flag(registers, C);
 
 	return rotate_bits_left(memory,registers, value, c_flag, carry_bit);
 }
@@ -136,7 +136,7 @@ static uint8_t rotate_bits_right_opcode(Memory* memory, Register* registers, uin
 static uint8_t rotate_bits_right_c_flag_opcode(Memory* memory, Register* registers, uint8_t* value)
 {
 	uint8_t carry_bit = *value & 0x01;
-	uint8_t c_flag = get_register_flag(memory, C);
+	uint8_t c_flag = get_register_flag(registers, C);
 
 	return rotate_bits_right(memory,registers, value, c_flag, carry_bit);
 }
