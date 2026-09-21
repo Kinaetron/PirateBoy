@@ -1,21 +1,21 @@
 #include "memory.h"
 #include <stdbool.h>
 
-bool is_pending(CPU_Memory* memory) {
+bool is_pending(Memory* memory) {
 	return (memory->flat[INTERRUPT_ENABLE_ADDR] & memory->flat[INTERRUPT_FLAG_ADDR] & 0x1F) == 0;
 }
 
-uint8_t memory_read(CPU_Memory* memory, uint16_t address) {
+uint8_t memory_read(Memory* memory, uint16_t address) {
 	return memory->flat[address];
 }
 
-void memory_write(CPU_Memory* memory, uint16_t address, uint8_t data) {
+void memory_write(Memory* memory, uint16_t address, uint8_t data) {
 	memory->flat[address] = data;
 }
 
-void memory_divider_register_incrementer(CPU_Memory* memory) {}
+void memory_divider_register_incrementer(Memory* memory) {}
 
-void set_if_interrupt(CPU_Memory* memory, Interrupt_Flag flag, bool value)
+void set_if_interrupt(Memory* memory, Interrupt_Flag flag, bool value)
 {
 	if (value) {
 		memory->flat[INTERRUPT_FLAG_ADDR] |= (1 << flag);

@@ -4,6 +4,6 @@
 #include "memory.h"
 #include <stdbool.h>
 
-uint8_t opcode_cb_step(CPU_Memory* memory);
+uint8_t opcode_cb_step(Memory* memory, Register* registers);
 
 #endif
