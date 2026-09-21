@@ -3,6 +3,6 @@
 
 #include "memory.h"
 
-uint8_t handle_interrupts(CPU_Memory* memory);
+uint8_t handle_interrupts(Memory* memory, Register* registers);
 
 #endif

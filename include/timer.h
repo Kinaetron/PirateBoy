@@ -10,6 +10,6 @@
 #define DIVIDER_INCREMENT	256
 
 void timer_reset_divider(void);
-void timer_step(CPU_Memory* memory, uint8_t cycles);
+void timer_step(Memory* memory, uint8_t cycles);
 
 #endif

@@ -10,7 +10,7 @@ static const uint16_t interrupt_vectors[5] =
 	0x0060  // Joypad
 };
 
-static uint8_t handle_interrupts(CPU_Memory* memory)
+static uint8_t handle_interrupts(Memory* memory, Register* registers)
 {
 	if (cpu_interrupt_master_enable())
 	{
@@ -25,12 +25,12 @@ static uint8_t handle_interrupts(CPU_Memory* memory)
 					cpu_set_interrupt_master_enable(false);
 
 					memory16 return_address;
-					return_address.value = memory->program_counter.value;
+					return_address.value = registers->program_counter.value;
 
-					write_byte(memory, &memory->stack_pointer, return_address.high);
-					write_byte(memory, &memory->stack_pointer, return_address.low);
+					write_byte(memory, &registers->stack_pointer, return_address.high);
+					write_byte(memory, &registers->stack_pointer, return_address.low);
 
-					memory->program_counter.value = interrupt_vectors[i];
+					registers->program_counter.value = interrupt_vectors[i];
 
 					return 20;
 				}

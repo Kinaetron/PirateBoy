@@ -8,6 +8,6 @@ void cpu_reset_state(void);
 bool cpu_is_halted(void);
 bool cpu_interrupt_master_enable(void);
 bool cpu_interrupt_master_pending(void);
-uint8_t opcode_step(CPU_Memory* memory, uint8_t opcode);
+uint8_t opcode_step(Memory* memory, Register* registers, uint8_t opcode);
 
 #endif
