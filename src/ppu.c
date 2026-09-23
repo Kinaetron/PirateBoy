@@ -18,7 +18,8 @@ typedef struct { uint8_t tile[BG_SIZE][BG_SIZE]; } BackgroundMap;
 static BackgroundMap map_1;
 static BackgroundMap map_2;
 
-typedef enum {
+typedef enum 
+{
 	LCD_BG_ENABLE = 0,
 	LCD_OBJ_ENABLE = 1,
 	LCD_OBJ_SIZE = 2,
@@ -29,13 +30,23 @@ typedef enum {
 	LCD_ENABLE = 7
 } LCD_Flag;
 
-typedef enum {
+typedef enum 
+{
 	LCD_STAT_LYC = 2,
 	LCD_STAT_MODE_0_INT = 3,
 	LCD_STAT_MODE_1_INT = 4,
 	LCD_STAT_MODE_2_INT = 5,
 	LCD_STAT_LYC_INT = 6
 } LCD_Status_Flag;
+
+typedef enum
+{
+	NONE = 0,
+	H_BLANK = 1,
+	V_BLANK = 2,
+	OAM_SCAN = 3,
+	DRAWING = 4
+} PPU_Mode;
 
 static void set_tile_data(Memory* memory)
 {
@@ -76,6 +87,19 @@ static bool get_lcd_control_register(Memory* memory, LCD_Flag flag)  {
 
 static bool get_lcd_status_register(Memory* memory, LCD_Status_Flag flag) {
 	return (memory_read(memory, LCD_STATUS_ADDRESS) >> flag) & 0x03;
+}
+
+static PPU_Mode get_ppu_mode(Memory* memory)
+{
+	switch (memory_read(memory, LCD_STATUS_ADDRESS) & 0x03)
+	{
+		case 0x00: return H_BLANK;
+		case 0x01: return V_BLANK;
+		case 0x02: return OAM_SCAN;
+		case 0x03: return DRAWING;
+	}
+
+	return NONE;
 }
 
 void ppu_step(Memory* memory, uint8_t cycles)
