@@ -82,11 +82,11 @@ static void set_background_maps(Memory* memory, BackgroundMap* map, uint16_t add
 }
 
 static bool get_lcd_control_register(Memory* memory, LCD_Flag flag)  {
-	return (memory_read(memory, LCD_CONTROL_ADDRES) >> flag) & 1;
+	return (memory_read(memory, LCD_CONTROL_ADDRES) >> flag) & 0x01;
 }
 
 static bool get_lcd_status_register(Memory* memory, LCD_Status_Flag flag) {
-	return (memory_read(memory, LCD_STATUS_ADDRESS) >> flag) & 0x03;
+	return (memory_read(memory, LCD_STATUS_ADDRESS) >> flag) & 0x01;
 }
 
 static PPU_Mode get_ppu_mode(Memory* memory)
