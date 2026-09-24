@@ -9,6 +9,8 @@
 #define TILE_MAP_2_ADDRESS 0X9C00
 #define LCD_CONTROL_ADDRES 0XFF40
 #define LCD_STATUS_ADDRESS 0XFF41
+#define DOTS_PER_LINE 456
+#define TOTAL_LINES   154
 
 typedef struct { uint8_t pixel[8][8]; } Tile;
 static Tile tiles[TILE_COUNT];
@@ -104,7 +106,11 @@ static PPU_Mode get_ppu_mode(Memory* memory)
 
 void ppu_step(Memory* memory, uint8_t cycles)
 {
-	set_tile_data(memory);
-	set_background_maps(memory, &map_1, TILE_MAP_1_ADDRESS);
-	set_background_maps(memory, &map_2, TILE_MAP_2_ADDRESS);
+	if (memory->vram_dirty)
+	{
+		set_tile_data(memory);
+		set_background_maps(memory, &map_1, TILE_MAP_1_ADDRESS);
+		set_background_maps(memory, &map_2, TILE_MAP_2_ADDRESS);
+		memory->vram_dirty = false;
+	}
 }

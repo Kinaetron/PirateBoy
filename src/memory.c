@@ -19,6 +19,12 @@ void memory_write(Memory* memory, uint16_t address, uint8_t data)
 	if (address >= ROM_START && address <= ROM_END) {
 		return;
 	}
+	else if (address >= VRAM_START && address <= VRAM_END)
+	{
+		memory->flat[address] = data;
+		memory->vram_dirty = true;
+		return;
+	}
 	else if (address >= ECHO_RAM_START && address <= ECHO_RAM_END) {
 		memory->flat[address - (ECHO_RAM_START - WRAM_START)] = data;
 		return;

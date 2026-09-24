@@ -54,6 +54,7 @@ typedef struct
 {
 	uint8_t flat[0x10000];
 	uint8_t* rom;
+	bool vram_dirty;
 } Memory;
 
 typedef struct
