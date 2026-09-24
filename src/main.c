@@ -10,6 +10,7 @@
 #include "timer.h"
 #include "memory.h"
 #include "cpu/cpu.h"
+#include "interrupt.h"
 #include "ppu.h"
 
 static SDL_Window* window = NULL;
@@ -57,6 +58,22 @@ SDL_AppResult SDL_AppIterate(void* appstate)
 
 	while (cycles_this_frame < CYCLES_PER_FRAME)
 	{
+		if (cpu_interrupt_master_pending())
+		{
+			cpu_set_interrupt_master_enable(true);
+			cpu_clear_interrupt_enable_pending();
+		}
+
+		uint8_t interrupt_cycles = handle_interrupts(memory, registers);
+
+		if (interrupt_cycles != 0)
+		{
+			cycles_this_frame += interrupt_cycles;
+			timer_step(memory, interrupt_cycles);
+			ppu_step(memory, interrupt_cycles);
+			continue;
+		}
+
 		uint8_t cycles = cpu_step(memory, registers);
 		cycles_this_frame += cycles;
 

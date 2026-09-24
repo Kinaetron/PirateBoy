@@ -21,7 +21,6 @@ bool cpu_interrupt_master_enable(void) {
 	return interrupt_master_enable;
 }
 
-
 bool cpu_interrupt_master_pending(void) {
 	return interrupt_enable_pending;
 }
@@ -30,11 +29,19 @@ void cpu_set_interrupt_master_enable(bool value) {
 	interrupt_master_enable = value;
 }
 
-static bool get_ie_interrupt(Memory* memory, Interrupt_Flag flag) {
+void cpu_set_interrupt_enable_pending(void) {
+	interrupt_enable_pending = true;
+}
+
+void cpu_clear_interrupt_enable_pending(void) {
+	interrupt_enable_pending = false;
+}
+
+bool get_ie_interrupt(Memory* memory, Interrupt_Flag flag) {
 	return (memory->flat[INTERRUPT_ENABLE_ADDR] >> flag) & 1;
 }
 
-static void set_ie_interrupt(Memory* memory, Interrupt_Flag flag, bool value)
+void set_ie_interrupt(Memory* memory, Interrupt_Flag flag, bool value)
 {
 	if (value) {
 		memory->flat[INTERRUPT_ENABLE_ADDR] |= (1 << flag);
@@ -44,11 +51,11 @@ static void set_ie_interrupt(Memory* memory, Interrupt_Flag flag, bool value)
 	}
 }
 
-static bool get_if_interrupt(Memory* memory, Interrupt_Flag flag) {
+bool get_if_interrupt(Memory* memory, Interrupt_Flag flag) {
 	return (memory->flat[INTERRUPT_FLAG_ADDR] >> flag) & 1;
 }
 
-static void write_byte(Memory* memory, uint16_t* address, uint8_t data)
+void write_byte(Memory* memory, uint16_t* address, uint8_t data)
 {
 	*address = *address - 1;
 	memory_write(memory, *address, data);

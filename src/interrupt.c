@@ -1,5 +1,6 @@
 #include "cpu/cpu.h"
 #include "interrupt.h"
+#include "cpu/opcodes.h"
 
 static const uint16_t interrupt_vectors[5] =
 {
@@ -10,7 +11,7 @@ static const uint16_t interrupt_vectors[5] =
 	0x0060  // Joypad
 };
 
-static uint8_t handle_interrupts(Memory* memory, Register* registers)
+uint8_t handle_interrupts(Memory* memory, Register* registers)
 {
 	if (cpu_interrupt_master_enable())
 	{
