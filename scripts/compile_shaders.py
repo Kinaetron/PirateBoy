@@ -2,8 +2,10 @@ import subprocess
 import sys
 from pathlib import Path
 
-SOURCE_DIR = Path("shaders/source")
-OUT_DIR = Path("shaders/compiled")
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+SOURCE_DIR = SCRIPT_DIR.parent / "shaders" / "source"
+OUT_DIR = SCRIPT_DIR.parent / "shaders" / "compiled"
 
 FORMATS = {
     "SPIRV": ".spv",
@@ -12,14 +14,15 @@ FORMATS = {
 }
 
 def main():
-    for subfolder in FORMATS:
-        (OUT_DIR / subfolder).mkdir(parents=True, exist_ok=True)
 
     shader_files = sorted(SOURCE_DIR.glob("*.hlsl"))
 
     if not shader_files:
         print(f"No .hlsl file found in {SOURCE_DIR}")
         return
+
+    for subfolder in FORMATS:
+        (OUT_DIR / subfolder).mkdir(parents=True, exist_ok=True)
 
     for shader_path in shader_files:
         name = shader_path.stem

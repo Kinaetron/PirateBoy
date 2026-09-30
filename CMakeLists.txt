@@ -81,6 +81,12 @@ add_custom_command(TARGET PirateBoy POST_BUILD
         $<TARGET_FILE_DIR:PirateBoy>
 )
 
+add_custom_command(TARGET PirateBoy POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/shaders/compiled
+        $<TARGET_FILE_DIR:PirateBoy>/shaders
+)
+
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES
     src/main.c
     src/cpu/cpu.c
