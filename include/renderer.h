@@ -24,9 +24,11 @@ typedef struct
 	uint32_t height;
 } RendererTexture;
 
-void renderer_initalize(SDL_Window* window, SDL_GPUDevice*  device);
-RendererTexture* renderer_create_texture(uint32_t width, uint32_t height);
-void renderer_upload_texture(RendererTexture* texture, const PixelBuffer* buffer);
-void renderer_render(SDL_Window* window, SDL_GPUDevice* device, RendererTexture* texture);
+SDL_AppResult renderer_initialize(SDL_Window* window, SDL_GPUDevice* gpu_device);
+RendererTexture* renderer_create_texture(uint32_t width, uint32_t height, SDL_GPUDevice* gpu_device);
+void renderer_upload_texture(RendererTexture* texture, const PixelBuffer* buffer, SDL_GPUDevice* gpu_device);
+SDL_AppResult renderer_render(SDL_Window* window, SDL_GPUDevice* gpu_device, RendererTexture* texture);
+void renderer_destroy_texture(RendererTexture* texture, SDL_GPUDevice* gpu_device);
+void renderer_destroy(SDL_GPUDevice* gpu_device);
 
 #endif
