@@ -6,10 +6,13 @@
 #include <SDL3/SDL_init.h>
 #include <SDL3/SDL_main.h>
 #include <stdbool.h>
+#include <stdlib.h>
 
+#include "ppu.h"
 #include "timer.h"
 #include "memory.h"
 #include "cpu/cpu.h"
+#include "interrupt.h"
 
 static SDL_Window* window = NULL;
 static SDL_GPUDevice* gpu_device = NULL;
@@ -21,37 +24,11 @@ static SDL_GPUDevice* gpu_device = NULL;
 
 static uint64_t last_time_ns = 0;
 
+static Memory* memory = NULL;
+static Register* registers = NULL;
 
-Memory* memory = NULL;
-Register* registers = NULL;
-
-SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
+static SDL_AppResult initialize_sdl(void)
 {
-	memory = calloc(1, sizeof(Memory));
-	registers = calloc(1, sizeof(Register));
-
-	if (memory == NULL || registers == NULL)
-	{
-		SDL_Log("Error: failed to allocate Memory/Register");
-		return SDL_APP_FAILURE;
-	}
-
-	if (argc < 2)
-	{
-		SDL_Log("Usage: PirateBoy <rom path>");
-		return SDL_APP_FAILURE;
-	}
-
-	if (!load_rom(memory, argv[1]))
-	{
-		SDL_Log("Couldn't load game %s", argv[1]);
-		return SDL_APP_FAILURE;
-	}
-
-	cpu_post_boot(registers, memory->rom->header_checksum);
-	memory_post_boot(memory);
-	timer_post_boot(memory);
-
 	window = SDL_CreateWindow("PirateBoy", 160, 144, 0);
 
 	if (window == NULL)
@@ -92,6 +69,39 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
 	return SDL_APP_CONTINUE;
 }
 
+SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
+{
+	memory = calloc(1, sizeof(Memory));
+	registers = calloc(1, sizeof(Register));
+
+	if (memory == NULL || registers == NULL)
+	{
+		SDL_Log("Error: failed to allocate Memory/Register");
+		return SDL_APP_FAILURE;
+	}
+
+	if (argc < 2)
+	{
+		SDL_Log("Usage: PirateBoy <rom path>");
+		return SDL_APP_FAILURE;
+	}
+
+	if (!load_rom(memory, argv[1]))
+	{
+		SDL_Log("Couldn't load game %s", argv[1]);
+		return SDL_APP_FAILURE;
+	}
+
+	cpu_post_boot(registers, memory->rom->header_checksum);
+	ppu_post_boot(memory);
+	timer_post_boot(memory);
+	memory_post_boot(memory);
+
+	last_time_ns = SDL_GetTicksNS();
+
+	return initialize_sdl();
+}
+
 SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 {
 	if (event->type == SDL_EVENT_QUIT) {
@@ -103,10 +113,30 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 
 SDL_AppResult SDL_AppIterate(void* appstate)
 {
-	int8_t cycles_this_frame = 0;
+	int cycles_this_frame = 0;
 
 	while (cycles_this_frame < CYCLES_PER_FRAME)
 	{
+		uint8_t cycles;
+
+		if (cpu_is_halted() && !is_pending(memory)) {
+			cycles = 4;
+		}
+		else if (cpu_is_halted() && cpu_interrupt_master_enable())
+		{
+			cpu_set_is_halted(false);
+			cycles = 4;
+		}
+		else {
+			cycles = cpu_step(memory, registers);
+		}
+
+		cycles += handle_interrupts(memory, registers);
+
+		cycles_this_frame += cycles;
+
+		timer_step(memory, cycles);
+		ppu_step(memory, cycles);
 	}
 
 	uint64_t target_duration_ns = (uint64_t)(((double)cycles_this_frame * NANOSECONDS_PER_SECOND) / CLOCK_HZ);

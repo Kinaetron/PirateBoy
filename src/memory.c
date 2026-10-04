@@ -99,7 +99,7 @@ bool load_rom(Memory* memory, const char* path)
 		return false;
 	}
 
-	rom->data = calloc(1, sizeof((size_t)file_size));
+	rom->data = calloc(1, (size_t)file_size);
 	if (rom->data == NULL)
 	{
 		free(rom);
@@ -154,12 +154,25 @@ uint8_t memory_read(Memory* memory, uint16_t address)
 	return memory->flat[address];
 }
 
+void write_byte(Memory* memory, uint16_t* address, uint8_t data)
+{
+	*address = *address - 1;
+	memory_write(memory, *address, data);
+}
+
 void memory_write(Memory* memory, uint16_t address, uint8_t data)
 {
 	if (address >= ROM_START && address <= ROM_END) {
 		return;
 	}
-	else if (address >= ECHO_RAM_START && address <= ECHO_RAM_END) {
+	else if (address >= VRAM_START && address <= VRAM_END)
+	{
+		memory->flat[address] = data;
+		memory->vram_dirty = true;
+		return;
+	}
+	else if (address >= ECHO_RAM_START && address <= ECHO_RAM_END) 
+	{
 		memory->flat[address - (ECHO_RAM_START - WRAM_START)] = data;
 		return;
 	}

@@ -3,6 +3,41 @@
 #include "cpu/opcodes.h"
 #include "cpu/opcodes_cb.h"
 
+static bool is_halted;
+static bool interrupt_master_enable;
+static bool interrupt_enable_pending;
+
+void cpu_reset_state(void)
+{
+	is_halted = false;
+	interrupt_master_enable = false;
+	interrupt_enable_pending = false;
+}
+
+bool cpu_is_halted(void) {
+	return is_halted;
+}
+
+bool cpu_interrupt_master_enable(void) {
+	return interrupt_master_enable;
+}
+
+
+bool cpu_interrupt_master_pending(void) {
+	return interrupt_enable_pending;
+}
+
+void cpu_set_interrupt_master_pending(bool value) {
+	interrupt_enable_pending = value;
+}
+
+void cpu_set_is_halted(bool value) {
+	is_halted = value;
+}
+
+void cpu_set_interrupt_master_enable(bool value) {
+	interrupt_master_enable = value;
+}
 
 void set_register_flag(Register* registers, Flag flag, bool value)
 {

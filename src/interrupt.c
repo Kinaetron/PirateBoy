@@ -1,3 +1,4 @@
+#include "memory.h"
 #include "cpu/cpu.h"
 #include "interrupt.h"
 
@@ -10,7 +11,25 @@ static const uint16_t interrupt_vectors[5] =
 	0x0060  // Joypad
 };
 
-static uint8_t handle_interrupts(Memory* memory, Register* registers)
+static bool get_ie_interrupt(Memory* memory, Interrupt_Flag flag) {
+	return (memory->flat[INTERRUPT_ENABLE_ADDR] >> flag) & 1;
+}
+
+static void set_ie_interrupt(Memory* memory, Interrupt_Flag flag, bool value)
+{
+	if (value) {
+		memory->flat[INTERRUPT_ENABLE_ADDR] |= (1 << flag);
+	}
+	else {
+		memory->flat[INTERRUPT_ENABLE_ADDR] &= ~(1 << flag);
+	}
+}
+
+static bool get_if_interrupt(Memory* memory, Interrupt_Flag flag) {
+	return (memory->flat[INTERRUPT_FLAG_ADDR] >> flag) & 1;
+}
+
+uint8_t handle_interrupts(Memory* memory, Register* registers)
 {
 	if (cpu_interrupt_master_enable())
 	{

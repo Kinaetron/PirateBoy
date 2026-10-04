@@ -8,7 +8,6 @@ typedef enum { Z = 7, N = 6, H = 5, C = 4 } Flag;
 
 
 uint8_t cpu_step(Memory* memory, Register* registers);
-void cpu_set_interrupt_master_enable(bool value);
 bool is_pending(Memory* memory);
 
 uint8_t fetch_byte(Memory* memory, uint16_t* address);
@@ -17,5 +16,14 @@ bool get_register_flag(Register* registers, Flag flag);
 void set_register_flag(Register* registers, Flag flag, bool value);
 
 void cpu_post_boot(Register* registers, uint8_t checksum_value);
+
+void cpu_reset_state(void);
+bool cpu_is_halted(void);
+bool cpu_interrupt_master_enable(void);
+bool cpu_interrupt_master_pending(void);
+
+void cpu_set_is_halted(bool value);
+void cpu_set_interrupt_master_pending(bool value);
+void cpu_set_interrupt_master_enable(bool value);
 
 #endif
