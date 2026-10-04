@@ -5,6 +5,8 @@ bool load_rom(Memory* memory, const char* path) {
 	return true;
 }
 
+void unload_rom(Memory* memory) { }
+
 bool is_pending(Memory* memory) {
 	return (memory->flat[INTERRUPT_ENABLE_ADDR] & memory->flat[INTERRUPT_FLAG_ADDR] & 0x1F) == 0;
 }

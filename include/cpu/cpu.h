@@ -16,4 +16,6 @@ memory16 fetch_two_bytes(Memory* memory, uint16_t* address);
 bool get_register_flag(Register* registers, Flag flag);
 void set_register_flag(Register* registers, Flag flag, bool value);
 
+void cpu_post_boot(Register* registers, uint8_t checksum_value);
+
 #endif

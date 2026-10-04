@@ -122,5 +122,7 @@ void memory_divider_register_incrementer(Memory* memory);
 void set_if_interrupt(Memory* memory, Interrupt_Flag flag, bool value);
 bool is_pending(Memory* memory);
 bool load_rom(Memory* memory, const char* path);
+void unload_rom(Memory* memory);
+void memory_post_boot(Memory* memory);
 
 #endif
