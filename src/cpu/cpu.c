@@ -20,6 +20,28 @@ bool get_register_flag(Register* registers, Flag flag) {
 	return (registers->af.low >> flag) & 1;
 }
 
+void cpu_post_boot(Register* registers, uint8_t checksum_value)
+{
+	bool checksum_set = (checksum_value != 0);
+
+	set_register_flag(registers, Z, true);
+	set_register_flag(registers, N, false);
+	set_register_flag(registers, H, checksum_set);
+	set_register_flag(registers, C, checksum_set);
+
+	registers->af.high = 0x01;
+	registers->bc.high = 0x00;
+	registers->de.high = 0x00;
+	registers->hl.high = 0x01;
+
+	registers->bc.low = 0x13;
+	registers->de.low = 0xD8;
+	registers->hl.low = 0x4D;
+
+	registers->program_counter.value = 0x0100;
+	registers->stack_pointer = 0xFFFE;
+}
+
 uint8_t fetch_byte(Memory* memory, uint16_t* address)
 {
 	uint8_t value = memory_read(memory, *address);

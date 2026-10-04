@@ -67,3 +67,14 @@ void timer_step(Memory* memory, uint8_t cycles)
 	divider_register_incrementer(memory, cycles);
 	timer_counter_incrementer(memory, cycles);
 }
+
+void timer_post_boot(Memory* memory)
+{
+	tima_cycles = 0;
+	divider_cycles = 0;
+
+	memory->flat[DIVIDER_REGISTER]	= 0xAB;
+	memory->flat[TIMER_COUNTER]		= 0x00;
+	memory->flat[TIMER_MODULO]		= 0x00;
+	memory->flat[TIMER_CONTROL]		= 0xF8;
+}

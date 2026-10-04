@@ -40,6 +40,59 @@
 
 #define DIVIDER_REGISTER	0XFF04
 
+typedef enum
+{
+	CARTRIDGE_ROM_ONLY = 0x00,
+	CARTRIDGE_MBC1 = 0x01,
+	CARTRIDGE_MBC1_RAM = 0x02,
+	CARTRIDGE_MBC1_RAM_BATTERY = 0x03,
+	CARTRIDGE_MBC2 = 0x05,
+	CARTRIDGE_MBC2_BATTERY = 0x06,
+	CARTRIDGE_ROM_RAM = 0x08,
+	CARTRIDGE_ROM_RAM_BATTERY = 0x09,
+	CARTRIDGE_MMM01 = 0x0B,
+	CARTRIDGE_MMM01_RAM = 0x0C,
+	CARTRIDGE_MMM01_RAM_BATTERY = 0x0D,
+	CARTRIDGE_MBC3_TIMER_BATTERY = 0x0F,
+	CARTRIDGE_MBC3_TIMER_RAM_BATTERY = 0x10,
+	CARTRIDGE_MBC3 = 0x11,
+	CARTRIDGE_MBC3_RAM = 0x12,
+	CARTRIDGE_MBC3_RAM_BATTERY = 0x13,
+	CARTRIDGE_MBC5 = 0x19,
+	CARTRIDGE_MBC5_RAM = 0x1A,
+	CARTRIDGE_MBC5_RAM_BATTERY = 0x1B,
+	CARTRIDGE_MBC5_RUMBLE = 0x1C,
+	CARTRIDGE_MBC5_RUMBLE_RAM = 0x1D,
+	CARTRIDGE_MBC5_RUMBLE_RAM_BATTERY = 0x1E,
+	CARTRIDGE_MBC6 = 0x20,
+	CARTRIDGE_MBC7_SENSOR_RUMBLE_RAM_BATTERY = 0x22,
+	CARTRIDGE_POCKET_CAMERA = 0xFC,
+	CARTRIDGE_BANDAI_TAMA5 = 0xFD,
+	CARTRIDGE_HUC3 = 0xFE,
+	CARTRIDGE_HUC1_RAM_BATTERY = 0xFF
+}Cartridge_Type;
+
+typedef struct
+{
+	char title[16];
+	char manufacturer_code[5];
+	uint8_t cgb_flag;
+	uint8_t licensee_code[2];
+	uint8_t sgb_flag;
+	Cartridge_Type cartridge_type;
+	uint8_t rom_size;
+	uint8_t ram_size;
+	uint8_t header_checksum;
+	uint8_t* data;
+	size_t size;
+} Rom;
+
+typedef struct
+{
+	uint8_t flat[0x10000];
+	Rom* rom;
+} Memory;
+
 typedef union
 {
 	uint16_t value;
@@ -49,12 +102,6 @@ typedef union
 		uint8_t high;
 	};
 } memory16;
-
-typedef struct
-{
-	uint8_t flat[0x10000];
-	uint8_t* rom;
-} Memory;
 
 typedef struct
 {
@@ -74,5 +121,8 @@ void memory_write(Memory* memory, uint16_t address, uint8_t data);
 void memory_divider_register_incrementer(Memory* memory);
 void set_if_interrupt(Memory* memory, Interrupt_Flag flag, bool value);
 bool is_pending(Memory* memory);
+bool load_rom(Memory* memory, const char* path);
+void unload_rom(Memory* memory);
+void memory_post_boot(Memory* memory);
 
 #endif
