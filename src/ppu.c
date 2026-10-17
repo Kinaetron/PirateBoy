@@ -1,4 +1,5 @@
 #include "ppu.h"
+#include "renderer.h"
 
 #include <stdbool.h>
 
@@ -30,6 +31,9 @@
 #define LAST_DRAW_LINE 144
 
 #define OAM_BUFFER_LIMIT 10
+
+#define TEXTURE_WIDTH 160
+#define TEXTURE_HEIGHT 144
 
 typedef enum
 {
@@ -96,6 +100,9 @@ static Sprite_Attributes sprite_buffer[OAM_BUFFER_LIMIT];
 static Tile tiles[TILE_COUNT];
 
 static uint32_t line_dots = 0;
+
+static PixelBuffer pixel_buffer;
+static RendererTexture* renderer_texture;
 
 static void set_tile_data(Memory* memory)
 {
@@ -243,6 +250,35 @@ static void oam_scan_mode(Memory* memory, uint8_t line)
 			break;
 		}
 	}
+}
+
+SDL_AppResult ppu_initialize(SDL_Window* window, SDL_GPUDevice* gpu_device)
+{
+	SDL_AppResult renderer_init = renderer_initialize(window, gpu_device);
+
+	if (renderer_init == SDL_APP_FAILURE) {
+		return renderer_init;
+	}
+
+	renderer_texture = renderer_create_texture(TEXTURE_WIDTH, TEXTURE_HEIGHT, gpu_device);
+
+	if (renderer_texture == NULL) 
+	{
+		SDL_Log("Failed to create renderer texture");
+		return SDL_APP_FAILURE;
+	}
+
+	pixel_buffer.width = TEXTURE_WIDTH;
+	pixel_buffer.height = TEXTURE_HEIGHT;
+	pixel_buffer.pixels = calloc(TEXTURE_WIDTH * TEXTURE_HEIGHT, sizeof(Pixel));
+
+	if (pixel_buffer.pixels == NULL) 
+	{
+		SDL_Log("Failed to create pixel buffer");
+		return SDL_APP_FAILURE;
+	}
+
+	return SDL_APP_CONTINUE;
 }
 
 void ppu_post_boot(Memory* memory)

@@ -99,7 +99,11 @@ SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
 
 	last_time_ns = SDL_GetTicksNS();
 
-	return initialize_sdl();
+	if (initialize_sdl() == SDL_APP_FAILURE) {
+		return SDL_APP_FAILURE;
+	}
+
+	return ppu_initialize(window, gpu_device);
 }
 
 SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
