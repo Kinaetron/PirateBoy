@@ -1,4 +1,4 @@
-#include "renderer.h"
+#include "ppu/renderer.h"
 
 static SDL_GPUBuffer* vertexBuffer;
 static SDL_GPUBuffer* indexBuffer;

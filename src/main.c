@@ -8,7 +8,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-#include "ppu.h"
+#include "ppu/ppu.h"
 #include "timer.h"
 #include "memory.h"
 #include "cpu/cpu.h"

@@ -1,5 +1,6 @@
-#include "ppu.h"
-#include "renderer.h"
+#include "ppu/ppu.h"
+#include "ppu/renderer.h"
+#include "ppu/pixel_queue.h"
 
 #include <stdbool.h>
 
@@ -34,6 +35,8 @@
 
 #define TEXTURE_WIDTH 160
 #define TEXTURE_HEIGHT 144
+
+#define SIGNED_TILE_BASE 256
 
 typedef enum
 {
@@ -103,6 +106,11 @@ static uint32_t line_dots = 0;
 
 static PixelBuffer pixel_buffer;
 static RendererTexture* renderer_texture;
+
+static PixelQueue* object_queue;
+static PixelQueue* background_queue;
+
+static uint8_t fetcher_column;
 
 static void set_tile_data(Memory* memory)
 {
@@ -252,6 +260,36 @@ static void oam_scan_mode(Memory* memory, uint8_t line)
 	}
 }
 
+static void background_fifo_filler(Memory* memory)
+{
+	if (!is_queue_empty(background_queue)) {
+		return;
+	}
+
+	uint8_t line_y = memory_read(memory, LINE_Y_ADDRESS);
+	uint8_t scroll_x = memory_read(memory, SCROLL_X_ADDRESS);
+	uint8_t scroll_y = memory_read(memory, SCROLL_Y_ADDRESS);
+
+	uint8_t row = ((line_y + scroll_y) & (BG_SIZE * TILE_SIZE - 1)) / TILE_SIZE;
+	uint8_t column = ((scroll_x / TILE_SIZE) + fetcher_column) & (BG_SIZE - 1);
+
+	BackgroundMap* map = get_lcd_control_register(memory, LCD_BG_TILE_MAP) ? &map_2 : &map_1;
+	uint8_t map_index = map->tile[row][column];
+
+	uint16_t tile_number = get_lcd_control_register(memory, LCD_TILE_DATA)
+		? map_index
+		: SIGNED_TILE_BASE + (int8_t)map_index;
+
+	uint8_t tile_row = (line_y + scroll_y) & (TILE_SIZE - 1);
+
+	for (uint8_t i = 0; i < TILE_SIZE; i++) {
+		enqueue(background_queue, tiles[tile_number].pixel[tile_row][i]);
+	}
+
+	fetcher_column++;
+}
+
+
 SDL_AppResult ppu_initialize(SDL_Window* window, SDL_GPUDevice* gpu_device)
 {
 	SDL_AppResult renderer_init = renderer_initialize(window, gpu_device);
@@ -275,6 +313,22 @@ SDL_AppResult ppu_initialize(SDL_Window* window, SDL_GPUDevice* gpu_device)
 	if (pixel_buffer.pixels == NULL) 
 	{
 		SDL_Log("Failed to create pixel buffer");
+		return SDL_APP_FAILURE;
+	}
+
+	object_queue = create_queue(8);
+
+	if (object_queue == NULL)
+	{
+		SDL_Log("Failed to create object queue.");
+		return SDL_APP_FAILURE;
+	}
+
+	background_queue = create_queue(8);
+
+	if (background_queue == NULL)
+	{
+		SDL_Log("Failed to create object queue.");
 		return SDL_APP_FAILURE;
 	}
 
@@ -321,7 +375,6 @@ void ppu_step(Memory* memory, uint8_t cycles)
 			oam_scan_mode(memory, line);
 			break;
 		case DRAWING:
-			// this is where we're going to render
 			break;
 		case H_BLANK:
 			break;
