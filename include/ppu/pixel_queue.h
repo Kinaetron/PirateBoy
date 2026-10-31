@@ -16,6 +16,8 @@ bool is_queue_empty(PixelQueue* queue);
 PixelQueue* create_queue(uint8_t capacity);
 void enqueue(PixelQueue* queue, uint8_t pixel);
 bool dequeue(PixelQueue* queue, uint8_t* pixel);
+bool queue_get(PixelQueue* queue, uint8_t index, uint8_t* pixel);
+bool queue_set(PixelQueue* queue, uint8_t index, uint8_t pixel);
 void destroy_queue(PixelQueue* queue);
 
 #endif

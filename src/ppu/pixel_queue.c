@@ -46,6 +46,28 @@ bool dequeue(PixelQueue* queue, uint8_t* pixel)
 	return true;
 }
 
+bool queue_get(PixelQueue* queue, uint8_t index, uint8_t* pixel)
+{
+	if (index >= queue->size) {
+		return false;
+	}
+
+	*pixel = queue->array[index];
+
+	return true;
+}
+
+bool queue_set(PixelQueue* queue, uint8_t index, uint8_t pixel)
+{
+	if (index >= queue->size) {
+		return false;
+	}
+
+	queue->array[index] = pixel;
+
+	return true;
+}
+
 bool is_queue_full(PixelQueue* queue) {
 	return queue->size == queue->capacity;
 }
