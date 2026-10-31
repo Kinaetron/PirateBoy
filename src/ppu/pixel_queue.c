@@ -8,7 +8,7 @@ PixelQueue* create_queue(uint8_t capacity)
 		return NULL;
 	}
 
-	queue->array = calloc(capacity, sizeof(uint8_t));
+	queue->array = calloc(capacity, sizeof(PixelInfo));
 	if (queue->array == NULL)
 	{
 		free(queue);
@@ -20,18 +20,18 @@ PixelQueue* create_queue(uint8_t capacity)
 	return queue;
 }
 
-void enqueue(PixelQueue* queue, uint8_t pixel)
+void enqueue(PixelQueue* queue, PixelInfo* pixel)
 {
-	if (is_full(queue)) {
+	if (is_queue_full(queue)) {
 		return;
 	}
 
-	queue->array[queue->size++] = pixel;
+	queue->array[queue->size++] = *pixel;
 }
 
-bool dequeue(PixelQueue* queue, uint8_t* pixel)
+bool dequeue(PixelQueue* queue, PixelInfo* pixel)
 {
-	if (is_empty(queue)) {
+	if (is_queue_empty(queue)) {
 		return false;
 	}
 
@@ -46,7 +46,7 @@ bool dequeue(PixelQueue* queue, uint8_t* pixel)
 	return true;
 }
 
-bool queue_get(PixelQueue* queue, uint8_t index, uint8_t* pixel)
+bool queue_get(PixelQueue* queue, uint8_t index, PixelInfo* pixel)
 {
 	if (index >= queue->size) {
 		return false;
@@ -57,13 +57,13 @@ bool queue_get(PixelQueue* queue, uint8_t index, uint8_t* pixel)
 	return true;
 }
 
-bool queue_set(PixelQueue* queue, uint8_t index, uint8_t pixel)
+bool queue_set(PixelQueue* queue, uint8_t index, PixelInfo* pixel)
 {
 	if (index >= queue->size) {
 		return false;
 	}
 
-	queue->array[index] = pixel;
+	queue->array[index] = *pixel;
 
 	return true;
 }

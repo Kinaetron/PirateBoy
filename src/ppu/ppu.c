@@ -2,6 +2,7 @@
 #include "ppu/renderer.h"
 #include "ppu/pixel_queue.h"
 
+#include <string.h>
 #include <stdbool.h>
 
 #define TILE_MAP_1_ADDRESS 0X9800
@@ -37,12 +38,6 @@
 #define TEXTURE_HEIGHT 144
 
 #define SIGNED_TILE_BASE 256
-
-typedef enum
-{
-	OBP0 = 0,
-	OBP1 = 1
-} Palette;
 
 typedef struct
 {
@@ -111,6 +106,7 @@ static PixelQueue* object_queue;
 static PixelQueue* background_queue;
 
 static uint8_t fetcher_column;
+static uint8_t sprite_count;
 
 static void set_tile_data(Memory* memory)
 {
@@ -231,6 +227,7 @@ static void oam_scan_mode(Memory* memory, uint8_t line)
 	uint8_t count = 0;
 	uint8_t obj_height = 8;
 	bool obj_size_type = get_lcd_control_register(memory, LCD_OBJ_SIZE);
+	get_sprite_attributes(memory);
 
 	if (obj_size_type) {
 		obj_height = 16;
@@ -240,7 +237,7 @@ static void oam_scan_mode(Memory* memory, uint8_t line)
 
 	for (int i = 0; i < OAM_ENTRY_COUNT; i++)
 	{
-		if (sprites[i].x <= 0) {
+		if (sprites[i].x <= -8) {
 			continue;
 		}
 
@@ -258,9 +255,11 @@ static void oam_scan_mode(Memory* memory, uint8_t line)
 			break;
 		}
 	}
+
+	sprite_count = count;
 }
 
-static void background_fifo_filler(Memory* memory)
+static void background_queue_filler(Memory* memory)
 {
 	if (!is_queue_empty(background_queue)) {
 		return;
@@ -282,13 +281,80 @@ static void background_fifo_filler(Memory* memory)
 
 	uint8_t tile_row = (line_y + scroll_y) & (TILE_SIZE - 1);
 
-	for (uint8_t i = 0; i < TILE_SIZE; i++) {
-		enqueue(background_queue, tiles[tile_number].pixel[tile_row][i]);
+	for (uint8_t i = 0; i < TILE_SIZE; i++) 
+	{
+		PixelInfo pixel = 
+		{ 
+			.color = tiles[tile_number].pixel[tile_row][i], 
+			.palette = OBP0,
+			.bg_priority = false 
+		};
+
+		enqueue(background_queue, &pixel);
 	}
 
 	fetcher_column++;
 }
 
+static void object_queue_filler(Memory* memory, uint8_t x)
+{
+	for (uint8_t i = 0; i < sprite_count; i++)
+	{
+		Sprite_Attributes sprite = sprite_buffer[i];
+
+		if (sprite.x != x) {
+			continue;
+		}
+
+		bool obj_size_type = get_lcd_control_register(memory, LCD_OBJ_SIZE);
+		uint8_t height = obj_size_type ? 16 : 8;
+
+		uint8_t line_y = memory_read(memory, LINE_Y_ADDRESS);
+		uint8_t row = line_y - sprite.y;
+		row = sprite.flags.y_flip ? (height - 1 - row) : row;
+
+		uint16_t tile_number = sprite.tile_index;
+
+		if (obj_size_type)
+		{
+			tile_number &= 0xFE;
+
+			if (row >= TILE_SIZE)
+			{
+				tile_number++;
+				row -= TILE_SIZE;
+			}
+		}
+
+		PixelInfo transparent = { 0 };
+		while (!is_queue_full(object_queue)) {
+			enqueue(object_queue, &transparent);
+		}
+
+		for (uint8_t pixel_index = 0; pixel_index < TILE_SIZE; pixel_index++)
+		{
+			uint8_t column = sprite.flags.x_flip ? (TILE_SIZE - 1 - pixel_index) : pixel_index;
+			uint8_t color = tiles[tile_number].pixel[row][column];
+
+			if (color == 0) {
+				continue;
+			}
+
+			PixelInfo existing;
+			if (queue_get(object_queue, pixel_index, &existing) && existing.color == 0)
+			{
+				PixelInfo pixel =
+				{
+					.color = color,
+					.palette = sprite.flags.sprite_palette,
+					.bg_priority = sprite.flags.priority
+				};
+
+				queue_set(object_queue, pixel_index, &pixel);
+			}
+		}
+	}
+}
 
 SDL_AppResult ppu_initialize(SDL_Window* window, SDL_GPUDevice* gpu_device)
 {
