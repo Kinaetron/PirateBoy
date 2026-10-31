@@ -15,6 +15,8 @@
 #define SCROLL_Y_ADDRESS 0xFF42
 #define SCROLL_X_ADDRESS 0xFF43
 #define BG_PALETTE_ADDRESS 0xFF47
+#define OBP0_PALETTE_ADDRESS 0xFF48
+#define OBP1_PALETTE_ADDRESS 0xFF49
 #define WINDOW_Y_ADDRESS 0xFF4A
 #define WINDOW_X_ADDRESS 0xFF4B
 
@@ -84,6 +86,15 @@ typedef enum
 	DRAWING = 3
 } PPU_Mode;
 
+
+static const Pixel shade_colors[4] =
+{
+	{ .r = 0xDF, .g = 0xEE, .b = 0xCB, .a = 0xFF },
+	{ .r = 0x9B, .g = 0xBC, .b = 0x59, .a = 0xFF },
+	{ .r = 0x4B, .g = 0x7A, .b = 0x3C, .a = 0xFF },
+	{ .r = 0x18, .g = 0x28, .b = 0x0F, .a = 0xFF }
+};
+
 typedef struct { uint8_t pixel[8][8]; } Tile;
 
 typedef struct { uint8_t tile[BG_SIZE][BG_SIZE]; } BackgroundMap;
@@ -105,6 +116,8 @@ static RendererTexture* renderer_texture;
 static PixelQueue* object_queue;
 static PixelQueue* background_queue;
 
+
+static uint8_t screen_x;
 static uint8_t fetcher_column;
 static uint8_t sprite_count;
 
@@ -220,6 +233,10 @@ static PPU_Mode compute_mode(uint8_t line_number, uint32_t line_dots)
 	else {
 		return H_BLANK;
 	}
+}
+
+static uint8_t get_pixel_shade(uint8_t palette, uint8_t color) {
+	return (palette >> (color * 2)) & 0x03;
 }
 
 static void oam_scan_mode(Memory* memory, uint8_t line)
@@ -354,6 +371,51 @@ static void object_queue_filler(Memory* memory, uint8_t x)
 			}
 		}
 	}
+}
+
+static void pixel_mixer(Memory* memory)
+{
+	if (is_queue_empty(background_queue)) {
+		return;
+	}
+
+	PixelInfo bg_pixel;
+	PixelInfo object_pixel;
+
+	dequeue(background_queue, &bg_pixel);
+
+	if (!dequeue(object_queue, &object_pixel)) {
+		object_pixel = (PixelInfo){ 0 };
+	}
+
+	if (!get_lcd_control_register(memory, LCD_BG_ENABLE)) {
+		bg_pixel.color = 0;
+	}
+
+	if (!get_lcd_control_register(memory, LCD_OBJ_ENABLE)) {
+		object_pixel.color = 0;
+	}
+
+	uint8_t shade;
+
+	if (object_pixel.color == 0 || 
+		(object_pixel.bg_priority && bg_pixel.color != 0))
+	{
+		uint8_t palette_register = memory_read(memory, BG_PALETTE_ADDRESS);
+		shade = get_pixel_shade(palette_register, bg_pixel.color);
+	}
+	else
+	{
+		uint8_t palette_register = object_pixel.palette == OBP0 ?
+			memory_read(memory, OBP0_PALETTE_ADDRESS) :
+			memory_read(memory, OBP1_PALETTE_ADDRESS);
+
+		shade = get_pixel_shade(palette_register, object_pixel.color);
+	}
+
+	uint8_t line_y = memory_read(memory, LINE_Y_ADDRESS);
+	pixel_buffer.pixels[line_y * TEXTURE_WIDTH + screen_x] = shade_colors[shade];
+	screen_x++;
 }
 
 SDL_AppResult ppu_initialize(SDL_Window* window, SDL_GPUDevice* gpu_device)
