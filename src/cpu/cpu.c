@@ -12,6 +12,7 @@ void cpu_reset_state(void)
 	is_halted = false;
 	interrupt_master_enable = false;
 	interrupt_enable_pending = false;
+	cpu_consume_halt_bug();
 }
 
 bool cpu_is_halted(void) {
