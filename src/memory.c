@@ -25,6 +25,8 @@
 #define SERIAL_CONTROL  0xFF02
 #define DMA_REGISTER    0xFF46
 
+#define INTERRUPT_FLAG_UNUSED_BITS 0xE0
+
 bool is_pending(Memory* memory)  {
 	return (memory->flat[INTERRUPT_ENABLE_ADDR] & memory->flat[INTERRUPT_FLAG_ADDR] & 0x1F) != 0;
 }
@@ -149,6 +151,10 @@ uint8_t memory_read(Memory* memory, uint16_t address)
 {
 	if (address >= ECHO_RAM_START && address <= ECHO_RAM_END) {
 		return memory->flat[address - (ECHO_RAM_START - WRAM_START)];
+	}
+
+	if (address == INTERRUPT_FLAG_ADDR) {
+		return memory->flat[address] | INTERRUPT_FLAG_UNUSED_BITS;
 	}
 
 	return memory->flat[address];

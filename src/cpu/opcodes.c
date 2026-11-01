@@ -2,6 +2,8 @@
 #include "cpu/cpu.h"
 #include "cpu/opcodes.h"
 
+static bool halt_bug = false;
+
 static uint8_t add_opcode(Register* registers, uint8_t value)
 {
 	set_register_flag(registers, N, false);
@@ -1081,10 +1083,15 @@ static uint8_t opcode_0x75(Memory* memory, Register* registers)
 	return 8;
 }
 
-static uint8_t opcode_0x76()
+static uint8_t opcode_0x76(Memory* memory)
 {
-	cpu_set_is_halted(true);
+	if (!cpu_interrupt_master_enable() && is_pending(memory)) 
+	{
+		halt_bug = true;
+		return 4;
+	}
 
+	cpu_set_is_halted(true);
 	return 4;
 }
 
@@ -1802,6 +1809,13 @@ static uint8_t opcode_0xFF(Memory* memory, Register* registers) {
 	return restart_opcode(memory, registers, 0x38);
 }
 
+bool cpu_consume_halt_bug(void)
+{
+	bool value = halt_bug;
+	halt_bug = false;
+	return value;
+}
+
 uint8_t opcode_step(Memory* memory, Register* registers, uint8_t opcode)
 {
 	if (cpu_interrupt_master_pending())
@@ -2175,7 +2189,7 @@ uint8_t opcode_step(Memory* memory, Register* registers, uint8_t opcode)
 			cycles = opcode_0x75(memory, registers);
 			break;
 		case 0x76:
-			cycles = opcode_0x76();
+			cycles = opcode_0x76(memory);
 			break;
 		case 0x77:
 			cycles = opcode_0x77(memory, registers);
