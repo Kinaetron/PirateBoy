@@ -19,6 +19,7 @@
 #define OBP1_PALETTE_ADDRESS 0xFF49
 #define WINDOW_Y_ADDRESS 0xFF4A
 #define WINDOW_X_ADDRESS 0xFF4B
+#define WINDOW_X_OFFSET 7
 
 #define TILE_SIZE 8
 #define TILE_COUNT 384
@@ -120,6 +121,10 @@ static PixelQueue* background_queue;
 static uint8_t screen_x;
 static uint8_t fetcher_column;
 static uint8_t sprite_count;
+
+static bool window_active;
+uint8_t window_column;
+uint8_t window_line_counter;
 
 static SDL_Window* ppu_window;
 static SDL_GPUDevice* ppu_gpu_device;
@@ -317,6 +322,39 @@ static void background_queue_filler(Memory* memory)
 	fetcher_column++;
 }
 
+static void window_queue_filler(Memory* memory)
+{
+	if (!is_queue_empty(background_queue)) {
+		return;
+	}
+
+	uint8_t row = window_line_counter / TILE_SIZE;
+	uint8_t column = window_column;
+
+	BackgroundMap* map = get_lcd_control_register(memory, LCD_WINDOW_TILE_MAP) ? &map_2 : &map_1;
+	uint8_t map_index = map->tile[row][column];
+
+	uint16_t tile_number = get_lcd_control_register(memory, LCD_TILE_DATA)
+		? map_index
+		: SIGNED_TILE_BASE + (int8_t)map_index;
+
+	uint8_t tile_row = window_line_counter & (TILE_SIZE - 1);
+
+	for (uint8_t i = 0; i < TILE_SIZE; i++)
+	{
+		PixelInfo pixel =
+		{
+			.color = tiles[tile_number].pixel[tile_row][i],
+			.palette = OBP0,
+			.bg_priority = false
+		};
+
+		enqueue(background_queue, &pixel);
+	}
+
+	window_column++;
+}
+
 static void object_queue_filler(Memory* memory)
 {
 	for (uint8_t i = 0; i < sprite_count; i++)
@@ -426,6 +464,7 @@ static void drawing_mode(Memory* memory)
 {
 	screen_x = 0;
 	fetcher_column = 0;
+	window_active = false;
 
 	PixelInfo discard;
 	while (dequeue(object_queue, &discard)) { }
@@ -433,9 +472,34 @@ static void drawing_mode(Memory* memory)
 
 	while (screen_x < TEXTURE_WIDTH)
 	{
+		bool window_enabled = get_lcd_control_register(memory, LCD_WINDOW_ENABLE);
+		uint8_t line_y = memory_read(memory, LINE_Y_ADDRESS);
+		uint8_t window_x = memory_read(memory, WINDOW_X_ADDRESS);
+		uint8_t window_y = memory_read(memory, WINDOW_Y_ADDRESS);
+
+		if (!window_active &&
+			window_enabled &&
+			line_y >= window_y &&
+			screen_x + WINDOW_X_OFFSET >= window_x)
+		{
+			window_active = true;
+			window_column = 0;
+			while (dequeue(background_queue, &discard)) { }
+		}
+
 		object_queue_filler(memory);
-		background_queue_filler(memory);
+
+		if (window_active) {
+			window_queue_filler(memory);
+		}
+		else {
+			background_queue_filler(memory);
+		}
 		pixel_mixer(memory);
+	}
+
+	if (window_active) {
+		window_line_counter++;
 	}
 }
 
@@ -547,8 +611,10 @@ void ppu_step(Memory* memory, uint8_t cycles)
 
 		line++;
 
-		if (line >= TOTAL_LINES) {
+		if (line >= TOTAL_LINES) 
+		{
 			line = 0;
+			window_line_counter = 0;
 		}
 
 		memory_write(memory, LINE_Y_ADDRESS, line);
