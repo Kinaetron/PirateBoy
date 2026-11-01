@@ -21,14 +21,18 @@ add_library(PirateBoyCore STATIC
     src/cpu/opcodes_cb.c
     src/timer.c
     src/interrupt.c
-    src/renderer.c
+    src/ppu/renderer.c
+    src/ppu/ppu.c
+    src/ppu/pixel_queue.c
     include/cpu/cpu.h
     include/cpu/opcodes.h
     include/cpu/opcodes_cb.h
     include/timer.h
     include/interrupt.h
     include/memory.h
-    include/renderer.h
+    include/ppu/renderer.h
+    include/ppu/ppu.h
+    include/ppu/pixel_queue.h
 )
 
 target_include_directories(PirateBoyCore PUBLIC include)
@@ -96,14 +100,18 @@ source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES
     src/memory.c
     src/memory_conformance.c
     src/interrupt.c
-    src/renderer.c
+    src/ppu/renderer.c
+    src/ppu/ppu.c
+    src/ppu/pixel_queue.c
     include/cpu/cpu.h
     include/cpu/opcodes.h
     include/cpu/opcodes_cb.h
     include/timer.h
     include/memory.h
     include/interrupt.h
-    include/renderer.h
+    include/ppu/renderer.h
+    include/ppu/ppu.h
+    include/ppu/pixel_queue.h
 )
 
 enable_testing()

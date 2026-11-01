@@ -7,6 +7,12 @@ bool load_rom(Memory* memory, const char* path) {
 
 void unload_rom(Memory* memory) { }
 
+void write_byte(Memory* memory, uint16_t* address, uint8_t data)
+{
+	*address = *address - 1;
+	memory_write(memory, *address, data);
+}
+
 bool is_pending(Memory* memory) {
 	return (memory->flat[INTERRUPT_ENABLE_ADDR] & memory->flat[INTERRUPT_FLAG_ADDR] & 0x1F) == 0;
 }

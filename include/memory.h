@@ -1,5 +1,5 @@
-#ifndef CPU_MEMORY
-#define CPU_MEMORY
+#ifndef MEMORY_H
+#define MEMORY_H
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -89,8 +89,9 @@ typedef struct
 
 typedef struct
 {
-	uint8_t flat[0x10000];
 	Rom* rom;
+	bool vram_dirty;
+	uint8_t flat[0x10000];
 } Memory;
 
 typedef union
@@ -124,5 +125,6 @@ bool is_pending(Memory* memory);
 bool load_rom(Memory* memory, const char* path);
 void unload_rom(Memory* memory);
 void memory_post_boot(Memory* memory);
+void write_byte(Memory* memory, uint16_t* address, uint8_t data);
 
 #endif

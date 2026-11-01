@@ -2,58 +2,6 @@
 #include "cpu/cpu.h"
 #include "cpu/opcodes.h"
 
-static bool is_halted;
-static bool interrupt_master_enable;
-static bool interrupt_enable_pending;
-
-void cpu_reset_state(void)
-{
-	is_halted = false;
-	interrupt_master_enable = false;
-	interrupt_enable_pending = false;
-}
-
-bool cpu_is_halted(void) {
-	return is_halted;
-}
-
-bool cpu_interrupt_master_enable(void) {
-	return interrupt_master_enable;
-}
-
-
-bool cpu_interrupt_master_pending(void) {
-	return interrupt_enable_pending;
-}
-
-void cpu_set_interrupt_master_enable(bool value) {
-	interrupt_master_enable = value;
-}
-
-static bool get_ie_interrupt(Memory* memory, Interrupt_Flag flag) {
-	return (memory->flat[INTERRUPT_ENABLE_ADDR] >> flag) & 1;
-}
-
-static void set_ie_interrupt(Memory* memory, Interrupt_Flag flag, bool value)
-{
-	if (value) {
-		memory->flat[INTERRUPT_ENABLE_ADDR] |= (1 << flag);
-	}
-	else {
-		memory->flat[INTERRUPT_ENABLE_ADDR] &= ~(1 << flag);
-	}
-}
-
-static bool get_if_interrupt(Memory* memory, Interrupt_Flag flag) {
-	return (memory->flat[INTERRUPT_FLAG_ADDR] >> flag) & 1;
-}
-
-static void write_byte(Memory* memory, uint16_t* address, uint8_t data)
-{
-	*address = *address - 1;
-	memory_write(memory, *address, data);
-}
-
 static uint8_t add_opcode(Register* registers, uint8_t value)
 {
 	set_register_flag(registers, N, false);
@@ -1135,7 +1083,7 @@ static uint8_t opcode_0x75(Memory* memory, Register* registers)
 
 static uint8_t opcode_0x76()
 {
-	is_halted = true;
+	cpu_set_is_halted(true);
 
 	return 4;
 }
@@ -1632,7 +1580,7 @@ static uint8_t opcode_0xD9(Memory* memory, Register* registers)
 	return_address.high = fetch_byte(memory, &registers->stack_pointer);
 
 	registers->program_counter.value = return_address.value;
-	interrupt_master_enable = true;
+	cpu_set_interrupt_master_enable(true);
 
 	return 16;
 }
@@ -1781,8 +1729,8 @@ static uint8_t opcode_0xF2(Memory* memory, Register* registers)
 
 static uint8_t opcode_0xF3()
 {
-	interrupt_master_enable = false;
-	interrupt_enable_pending = false;
+	cpu_set_interrupt_master_enable(false);
+	cpu_set_interrupt_master_pending(false);
 
 	return 4;
 }
@@ -1838,7 +1786,7 @@ static uint8_t opcode_0xFA(Memory* memory, Register* registers)
 
 static uint8_t opcode_0xFB()
 {
-	interrupt_enable_pending = true;
+	cpu_set_interrupt_master_pending(true);
 
 	return 4;
 }
@@ -1856,16 +1804,16 @@ static uint8_t opcode_0xFF(Memory* memory, Register* registers) {
 
 uint8_t opcode_step(Memory* memory, Register* registers, uint8_t opcode)
 {
-	if (interrupt_enable_pending)
+	if (cpu_interrupt_master_pending())
 	{
-		interrupt_master_enable = true;
-		interrupt_enable_pending = false;
+		cpu_set_interrupt_master_enable(true);
+		cpu_set_interrupt_master_pending(false);
 	}
 
-	if (is_halted)
+	if (cpu_is_halted())
 	{
 		if (is_pending(memory) != 0) {
-			is_halted = false;
+			cpu_set_is_halted(false);
 		}
 		else {
 			return 4;
