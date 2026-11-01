@@ -24,6 +24,7 @@ add_library(PirateBoyCore STATIC
     src/ppu/renderer.c
     src/ppu/ppu.c
     src/ppu/pixel_queue.c
+    src/cartridge/mapper.c
     include/cpu/cpu.h
     include/cpu/opcodes.h
     include/cpu/opcodes_cb.h
@@ -33,6 +34,7 @@ add_library(PirateBoyCore STATIC
     include/ppu/renderer.h
     include/ppu/ppu.h
     include/ppu/pixel_queue.h
+    include/cartridge/mapper.h
 )
 
 target_include_directories(PirateBoyCore PUBLIC include)
@@ -103,6 +105,7 @@ source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES
     src/ppu/renderer.c
     src/ppu/ppu.c
     src/ppu/pixel_queue.c
+    src/cartridge/mapper.c
     include/cpu/cpu.h
     include/cpu/opcodes.h
     include/cpu/opcodes_cb.h
@@ -112,6 +115,7 @@ source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES
     include/ppu/renderer.h
     include/ppu/ppu.h
     include/ppu/pixel_queue.h
+    include/cartridge/mapper.h
 )
 
 enable_testing()
