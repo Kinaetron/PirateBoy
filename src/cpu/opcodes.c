@@ -634,7 +634,7 @@ static uint8_t opcode_0x36(Memory* memory, Register* registers)
 	memory_write(memory, registers->hl.value,
 		fetch_byte(memory, &registers->program_counter));
 
-	return 8;
+	return 12;
 }
 
 static uint8_t opcode_0x37(Register* registers)
@@ -643,7 +643,7 @@ static uint8_t opcode_0x37(Register* registers)
 	set_register_flag(registers, H, false);
 	set_register_flag(registers, C, true);
 
-	return 8;
+	return 4;
 }
 
 static uint8_t opcode_0x38(Memory* memory, Register* registers) {
