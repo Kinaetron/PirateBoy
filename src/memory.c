@@ -151,6 +151,10 @@ uint8_t memory_read(Memory* memory, uint16_t address)
 		return memory->flat[address - (ECHO_RAM_START - WRAM_START)];
 	}
 
+	if (address == 0xFF0F) {
+		return memory->flat[address] | 0xE0;
+	}
+
 	return memory->flat[address];
 }
 

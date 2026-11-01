@@ -95,7 +95,14 @@ memory16 fetch_two_bytes(Memory* memory, uint16_t* address)
 
 uint8_t cpu_step(Memory* memory, Register* registers)
 {
-	uint8_t opcode = fetch_byte(memory,  &registers->program_counter);
+	uint8_t opcode;
+
+	if (cpu_consume_halt_bug()) {
+		opcode = memory_read(memory, registers->program_counter.value);
+	}
+	else {
+		opcode = fetch_byte(memory, &registers->program_counter);
+	}
 
 	if (opcode == 0xCB) {
 		return opcode_cb_step(memory, registers);
