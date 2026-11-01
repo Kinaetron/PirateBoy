@@ -29,7 +29,7 @@ static Register* registers = NULL;
 
 static SDL_AppResult initialize_sdl(void)
 {
-	window = SDL_CreateWindow("PirateBoy", 160, 144, 0);
+	window = SDL_CreateWindow("PirateBoy", 480, 432, 0);
 
 	if (window == NULL)
 	{
