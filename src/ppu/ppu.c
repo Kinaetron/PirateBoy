@@ -121,6 +121,10 @@ static uint8_t screen_x;
 static uint8_t fetcher_column;
 static uint8_t sprite_count;
 
+static SDL_Window* ppu_window;
+static SDL_GPUDevice* ppu_gpu_device;
+
+
 static void set_tile_data(Memory* memory)
 {
 	uint16_t address = VRAM_START;
@@ -313,13 +317,13 @@ static void background_queue_filler(Memory* memory)
 	fetcher_column++;
 }
 
-static void object_queue_filler(Memory* memory, uint8_t x)
+static void object_queue_filler(Memory* memory)
 {
 	for (uint8_t i = 0; i < sprite_count; i++)
 	{
 		Sprite_Attributes sprite = sprite_buffer[i];
 
-		if (sprite.x != x) {
+		if (sprite.x != screen_x) {
 			continue;
 		}
 
@@ -418,15 +422,35 @@ static void pixel_mixer(Memory* memory)
 	screen_x++;
 }
 
+static void drawing_mode(Memory* memory)
+{
+	screen_x = 0;
+	fetcher_column = 0;
+
+	PixelInfo discard;
+	while (dequeue(object_queue, &discard)) { }
+	while (dequeue(background_queue, &discard)) { }
+
+	while (screen_x < TEXTURE_WIDTH)
+	{
+		object_queue_filler(memory);
+		background_queue_filler(memory);
+		pixel_mixer(memory);
+	}
+}
+
 SDL_AppResult ppu_initialize(SDL_Window* window, SDL_GPUDevice* gpu_device)
 {
-	SDL_AppResult renderer_init = renderer_initialize(window, gpu_device);
+	ppu_window = window;
+	ppu_gpu_device = gpu_device;
+
+	SDL_AppResult renderer_init = renderer_initialize(ppu_window, ppu_gpu_device);
 
 	if (renderer_init == SDL_APP_FAILURE) {
 		return renderer_init;
 	}
 
-	renderer_texture = renderer_create_texture(TEXTURE_WIDTH, TEXTURE_HEIGHT, gpu_device);
+	renderer_texture = renderer_create_texture(TEXTURE_WIDTH, TEXTURE_HEIGHT, ppu_gpu_device);
 
 	if (renderer_texture == NULL) 
 	{
@@ -503,6 +527,7 @@ void ppu_step(Memory* memory, uint8_t cycles)
 			oam_scan_mode(memory, line);
 			break;
 		case DRAWING:
+			drawing_mode(memory);
 			break;
 		case H_BLANK:
 			break;
@@ -528,8 +553,12 @@ void ppu_step(Memory* memory, uint8_t cycles)
 
 		memory_write(memory, LINE_Y_ADDRESS, line);
 
-		if (line == LAST_DRAW_LINE) {
+		if (line == LAST_DRAW_LINE) 
+		{
 			set_if_interrupt(memory, VBlank, true);
+
+			renderer_upload_texture(renderer_texture, &pixel_buffer, ppu_gpu_device);
+			renderer_render(ppu_window, ppu_gpu_device, renderer_texture);
 		}
 
 		check_lyc(memory, line);
