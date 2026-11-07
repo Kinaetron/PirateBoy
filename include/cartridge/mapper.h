@@ -2,6 +2,7 @@
 #define MAPPER_H
 
 #include <stdint.h>
+#include "cartridge/cartridge_type.h"
 
 typedef struct Mapper 
 {
@@ -11,5 +12,8 @@ typedef struct Mapper
 	void    (*write_ram) (struct Mapper*, uint16_t address, uint8_t value);
 	void*	state;
 } Mapper;
+
+Mapper* create_mapper(Cartridge_Type cartridge_type, const uint8_t* rom, size_t rom_size, size_t ram_size);
+void destroy_mapper(Mapper* mapper);
 
 #endif
