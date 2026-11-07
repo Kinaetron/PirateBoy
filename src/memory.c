@@ -34,6 +34,18 @@ bool is_pending(Memory* memory)  {
 	return (memory->flat[INTERRUPT_ENABLE_ADDR] & memory->flat[INTERRUPT_FLAG_ADDR] & 0x1F) != 0;
 }
 
+static size_t ram_size_in_bytes(uint8_t ram_size_code)
+{
+	switch (ram_size_code)
+	{
+		case 0x02: return 8 * 1024;
+		case 0x03: return 32 * 1024;
+		case 0x04: return 128 * 1024;
+		case 0x05: return 64 * 1024;
+		default:   return 0;
+	}
+}
+
 static bool parse_rom_header(Rom* rom)
 {
 	if (rom->size < HEADER_MINIMUM_SIZE) {
@@ -135,7 +147,7 @@ bool load_rom(Memory* memory, const char* path)
 		rom->cartridge_type,
 		rom->data,
 		rom->size,
-		rom->ram_size);
+		ram_size_in_bytes(rom->ram_size));
 
 	if (rom->mapper == NULL)
 	{

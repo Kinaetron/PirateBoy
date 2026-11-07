@@ -26,6 +26,10 @@ static uint8_t mbc0_read_ram(Mapper* mapper, uint16_t address) {
 
 static void mbc0_write_ram(Mapper* mapper, uint16_t address, uint8_t value) { }
 
+static void mbc0_destroy(Mapper* mapper) { 
+	free(mapper->state); 
+}
+
 Mapper* create_mbc0(const uint8_t* rom, size_t rom_size)
 {
 	Mapper* mapper = calloc(1, sizeof(Mapper));
@@ -48,6 +52,7 @@ Mapper* create_mbc0(const uint8_t* rom, size_t rom_size)
 	mapper->write_rom = mbc0_write_rom;
 	mapper->read_ram = mbc0_read_ram;
 	mapper->write_ram = mbc0_write_ram;
+	mapper->destroy = mbc0_destroy;
 
 	return mapper;
 }

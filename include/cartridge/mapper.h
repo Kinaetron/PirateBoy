@@ -10,6 +10,7 @@ typedef struct Mapper
 	void    (*write_rom) (struct Mapper*, uint16_t address, uint8_t value);
 	uint8_t	(*read_ram)	 (struct Mapper*, uint16_t address);
 	void    (*write_ram) (struct Mapper*, uint16_t address, uint8_t value);
+	void	(*destroy)(struct Mapper*);
 	void*	state;
 } Mapper;
 
