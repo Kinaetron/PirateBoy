@@ -25,10 +25,25 @@
 #define SERIAL_CONTROL  0xFF02
 #define DMA_REGISTER    0xFF46
 
+#define EXTERNAL_RAM_START      0xA000
+#define EXTERNAL_RAM_END        0xBFFF
+
 #define INTERRUPT_FLAG_UNUSED_BITS 0xE0
 
 bool is_pending(Memory* memory)  {
 	return (memory->flat[INTERRUPT_ENABLE_ADDR] & memory->flat[INTERRUPT_FLAG_ADDR] & 0x1F) != 0;
+}
+
+static size_t ram_size_in_bytes(uint8_t ram_size_code)
+{
+	switch (ram_size_code)
+	{
+		case 0x02: return 8 * 1024;
+		case 0x03: return 32 * 1024;
+		case 0x04: return 128 * 1024;
+		case 0x05: return 64 * 1024;
+		default:   return 0;
+	}
 }
 
 static bool parse_rom_header(Rom* rom)
@@ -128,10 +143,21 @@ bool load_rom(Memory* memory, const char* path)
 		return false;
 	}
 
-	memory->rom = rom;
+	rom->mapper = create_mapper(
+		rom->cartridge_type,
+		rom->data,
+		rom->size,
+		ram_size_in_bytes(rom->ram_size));
 
-	size_t copy_size = (rom->size < 0x8000) ? rom->size : 0x8000;
-	memcpy(memory->flat, rom->data, copy_size);
+	if (rom->mapper == NULL)
+	{
+		SDL_Log("Unsupported cartridge type");
+		free(rom->data);
+		free(rom);
+		return false;
+	}
+
+	memory->rom = rom;
 
 	return true;
 }
@@ -142,6 +168,7 @@ void unload_rom(Memory* memory)
 		return;
 	}
 
+	destroy_mapper(memory->rom->mapper);
 	free(memory->rom->data);
 	free(memory->rom);
 	memory->rom = NULL;
@@ -149,6 +176,16 @@ void unload_rom(Memory* memory)
 
 uint8_t memory_read(Memory* memory, uint16_t address)
 {
+	Mapper* mapper = memory->rom->mapper;
+
+	if (address <= ROM_END) {
+		return mapper->read_rom(mapper, address);
+	}
+
+	if (address >= EXTERNAL_RAM_START && address <= EXTERNAL_RAM_END) {
+		return mapper->read_ram(mapper, address);
+	}
+
 	if (address >= ECHO_RAM_START && address <= ECHO_RAM_END) {
 		return memory->flat[address - (ECHO_RAM_START - WRAM_START)];
 	}
@@ -168,7 +205,16 @@ void write_byte(Memory* memory, uint16_t* address, uint8_t data)
 
 void memory_write(Memory* memory, uint16_t address, uint8_t data)
 {
-	if (address >= ROM_START && address <= ROM_END) {
+	Mapper* mapper = memory->rom->mapper;
+
+	if (address >= ROM_START && address <= ROM_END) 
+	{
+		mapper->write_rom(mapper, address, data);
+		return;
+	}
+	else if (address >= EXTERNAL_RAM_START && address <= EXTERNAL_RAM_END)
+	{
+		mapper->write_ram(mapper, address, data);
 		return;
 	}
 	else if (address >= VRAM_START && address <= VRAM_END)
