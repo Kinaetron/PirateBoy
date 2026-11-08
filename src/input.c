@@ -25,8 +25,10 @@ void input_event_handler(SDL_Event* event)
 	}
 }
 
-void input_update(void)
+bool input_update(void)
 {
+	InputState previous = state;
+
 	const bool* keys = SDL_GetKeyboardState(NULL);
 
 	bool pad_up = false, pad_down = false, pad_left = false, pad_right = false;
@@ -63,6 +65,15 @@ void input_update(void)
 		state.up = false;    
 		state.down = false; 
 	}
+
+	return (!previous.up && state.up)
+		|| (!previous.down && state.down)
+		|| (!previous.left && state.left)
+		|| (!previous.right && state.right)
+		|| (!previous.a && state.a)
+		|| (!previous.b && state.b)
+		|| (!previous.start && state.start)
+		|| (!previous.select && state.select);
 }
 
 InputState* input_state(void) {

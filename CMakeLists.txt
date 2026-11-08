@@ -52,6 +52,7 @@ target_link_libraries(PirateBoyCore
 
 add_library(PirateBoyMemory STATIC src/memory.c)
 target_include_directories(PirateBoyMemory PUBLIC include)
+target_link_libraries(PirateBoyMemory PUBLIC SDL3::SDL3)
 
 add_library(PirateBoyMemoryConformance STATIC src/memory_conformance.c)
 target_include_directories(PirateBoyMemoryConformance PUBLIC include)

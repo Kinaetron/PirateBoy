@@ -126,7 +126,9 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 
 SDL_AppResult SDL_AppIterate(void* appstate)
 {
-	input_update();
+	if (input_update()) {
+		set_if_interrupt(memory, JoyPad, true);
+	}
 
 	int cycles_this_frame = 0;
 

@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
+#include "input.h"
 #include "timer.h"
 #include "memory.h"
 
@@ -29,9 +31,54 @@
 #define EXTERNAL_RAM_END        0xBFFF
 
 #define INTERRUPT_FLAG_UNUSED_BITS 0xE0
+#define JOYPAD_NON_SELECT_BITS 0xCF
+#define JOYPAD_HIGH_NIBBLE 0xF0
+#define JOYPAD_INTERRUPT_BIT 0x10
+
+typedef enum
+{
+	BUTTONS = 5,
+	DPAD = 4
+} JoyPad_Type;
 
 bool is_pending(Memory* memory)  {
 	return (memory->flat[INTERRUPT_ENABLE_ADDR] & memory->flat[INTERRUPT_FLAG_ADDR] & 0x1F) != 0;
+}
+
+static bool get_joypad(uint8_t value, JoyPad_Type type) {
+	return ((value >> (uint8_t)type) & 1) == 0;
+}
+
+static uint8_t buttons_to_nibble(bool bit0, bool bit1, bool bit2, bool bit3)
+{
+	uint8_t nibble = (uint8_t)((!bit0) | (!bit1 << 1) | (!bit2 << 2) | (!bit3 << 3));
+	return JOYPAD_HIGH_NIBBLE | nibble;
+}
+
+static uint8_t get_input_state(Memory* memory)
+{
+	InputState* state = input_state();
+	uint8_t value = memory->flat[JOYPAD_REGISTER];
+
+	if (get_joypad(value, BUTTONS)) 
+	{
+		value &= buttons_to_nibble(
+			state->a, 
+			state->b, 
+			state->select, 
+			state->start);
+	}
+
+	if (get_joypad(value, DPAD)) 
+	{
+		value &= buttons_to_nibble(
+			state->right, 
+			state->left, 
+			state->up, 
+			state->down);
+	}
+
+	return value;
 }
 
 static size_t ram_size_in_bytes(uint8_t ram_size_code)
@@ -190,6 +237,10 @@ uint8_t memory_read(Memory* memory, uint16_t address)
 		return memory->flat[address - (ECHO_RAM_START - WRAM_START)];
 	}
 
+	if (address == JOYPAD_REGISTER) {
+		return get_input_state(memory);
+	}
+
 	if (address == INTERRUPT_FLAG_ADDR) {
 		return memory->flat[address] | INTERRUPT_FLAG_UNUSED_BITS;
 	}
@@ -226,6 +277,11 @@ void memory_write(Memory* memory, uint16_t address, uint8_t data)
 	else if (address >= ECHO_RAM_START && address <= ECHO_RAM_END) 
 	{
 		memory->flat[address - (ECHO_RAM_START - WRAM_START)] = data;
+		return;
+	}
+	else if (address == JOYPAD_REGISTER)
+	{
+		memory->flat[address] = data | JOYPAD_NON_SELECT_BITS;
 		return;
 	}
 	else if (address == DIVIDER_REGISTER) {

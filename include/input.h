@@ -12,7 +12,7 @@ typedef struct
 
 
 void input_event_handler(SDL_Event* event);
-void input_update(void);
+bool input_update(void);
 InputState* input_state(void);
 void input_destroy(void);
 
