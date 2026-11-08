@@ -86,7 +86,14 @@ typedef struct
 	memory16 program_counter;
 } Register;
 
-typedef enum { JoyPad = 4, Serial = 3, Timer = 2, LCD = 1, VBlank = 0 } Interrupt_Flag;
+typedef enum 
+{ 
+	JoyPad = 4, 
+	Serial = 3, 
+	Timer = 2, 
+	LCD = 1, 
+	VBlank = 0 
+} Interrupt_Flag;
 
 uint8_t memory_read(Memory* memory, uint16_t address);
 void memory_write(Memory* memory, uint16_t address, uint8_t data);

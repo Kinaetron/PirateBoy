@@ -27,6 +27,7 @@ add_library(PirateBoyCore STATIC
     src/cartridge/mapper.c
     src/cartridge/mbc0.c
     src/cartridge/mbc1.c
+    src/input.c
     include/cpu/cpu.h
     include/cpu/opcodes.h
     include/cpu/opcodes_cb.h
@@ -40,6 +41,7 @@ add_library(PirateBoyCore STATIC
     include/cartridge/mbc0.h
     include/cartridge/mbc1.h
     include/cartridge/cartridge_type.h
+    include/input.h
 )
 
 target_include_directories(PirateBoyCore PUBLIC include)
@@ -50,6 +52,7 @@ target_link_libraries(PirateBoyCore
 
 add_library(PirateBoyMemory STATIC src/memory.c)
 target_include_directories(PirateBoyMemory PUBLIC include)
+target_link_libraries(PirateBoyMemory PUBLIC SDL3::SDL3)
 
 add_library(PirateBoyMemoryConformance STATIC src/memory_conformance.c)
 target_include_directories(PirateBoyMemoryConformance PUBLIC include)
@@ -113,6 +116,7 @@ source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES
     src/cartridge/mapper.c
     src/cartridge/mbc0.c
     src/cartridge/mbc1.c
+    src/input.c
     include/cpu/cpu.h
     include/cpu/opcodes.h
     include/cpu/opcodes_cb.h
@@ -126,6 +130,7 @@ source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES
     include/cartridge/mbc0.h
     include/cartridge/mbc1.h
     include/cartridge/cartridge_type.h
+    include/input.h
 )
 
 enable_testing()

@@ -13,6 +13,7 @@
 #include "memory.h"
 #include "cpu/cpu.h"
 #include "interrupt.h"
+#include "input.h"
 
 static SDL_Window* window = NULL;
 static SDL_GPUDevice* gpu_device = NULL;
@@ -29,6 +30,12 @@ static Register* registers = NULL;
 
 static SDL_AppResult initialize_sdl(void)
 {
+	if (!SDL_Init(SDL_INIT_GAMEPAD | SDL_INIT_VIDEO))
+	{
+		SDL_Log("Couldn't initialize SDL: %s", SDL_GetError());
+		return SDL_APP_FAILURE;
+	}
+
 	window = SDL_CreateWindow("PirateBoy", 480, 432, 0);
 
 	if (window == NULL)
@@ -112,11 +119,17 @@ SDL_AppResult SDL_AppEvent(void* appstate, SDL_Event* event)
 		return SDL_APP_SUCCESS;
 	}
 
+	input_event_handler(event);
+
 	return SDL_APP_CONTINUE;
 }
 
 SDL_AppResult SDL_AppIterate(void* appstate)
 {
+	if (input_update()) {
+		set_if_interrupt(memory, JoyPad, true);
+	}
+
 	int cycles_this_frame = 0;
 
 	while (cycles_this_frame < CYCLES_PER_FRAME)
