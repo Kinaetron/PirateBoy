@@ -35,14 +35,35 @@
 #define JOYPAD_HIGH_NIBBLE 0xF0
 #define JOYPAD_INTERRUPT_BIT 0x10
 
+#define OAM_START               0xFE00
+#define OAM_SIZE                0xA0
+#define DMA_CYCLES_PER_BYTE     4
+#define DMA_ECHO_SOURCE_START   0xE0
+#define DMA_ECHO_PAGE_OFFSET    0x20
+
 typedef enum
 {
 	BUTTONS = 5,
 	DPAD = 4
 } JoyPad_Type;
 
+typedef struct
+{
+	bool active;
+	bool starting;
+	uint16_t source;
+	uint16_t index;
+	uint8_t cycles;
+} Dma;
+
+static Dma dma;
+
 bool is_pending(Memory* memory)  {
 	return (memory->flat[INTERRUPT_ENABLE_ADDR] & memory->flat[INTERRUPT_FLAG_ADDR] & 0x1F) != 0;
+}
+
+static bool dma_blocks_bus(uint16_t address) {
+	return dma.active && !dma.starting && address < IO_START;
 }
 
 static bool get_joypad(uint8_t value, JoyPad_Type type) {
@@ -221,7 +242,7 @@ void unload_rom(Memory* memory)
 	memory->rom = NULL;
 }
 
-uint8_t memory_read(Memory* memory, uint16_t address)
+static uint8_t bus_read(Memory* memory, uint16_t address)
 {
 	Mapper* mapper = memory->rom->mapper;
 
@@ -248,6 +269,15 @@ uint8_t memory_read(Memory* memory, uint16_t address)
 	return memory->flat[address];
 }
 
+uint8_t memory_read(Memory* memory, uint16_t address)
+{
+	if (dma_blocks_bus(address)) {
+		return 0xFF;
+	}
+
+	return bus_read(memory, address);
+}
+
 void write_byte(Memory* memory, uint16_t* address, uint8_t data)
 {
 	*address = *address - 1;
@@ -256,6 +286,10 @@ void write_byte(Memory* memory, uint16_t* address, uint8_t data)
 
 void memory_write(Memory* memory, uint16_t address, uint8_t data)
 {
+	if (dma_blocks_bus(address)) {
+		return;
+	}
+
 	Mapper* mapper = memory->rom->mapper;
 
 	if (address >= ROM_START && address <= ROM_END) 
@@ -284,9 +318,27 @@ void memory_write(Memory* memory, uint16_t address, uint8_t data)
 		memory->flat[address] = data | JOYPAD_NON_SELECT_BITS;
 		return;
 	}
-	else if (address == DIVIDER_REGISTER) {
+	else if (address == DIVIDER_REGISTER) 
+	{
 		memory->flat[address] = 0;
 		timer_reset_divider();
+		return;
+	}
+	else if (address == DMA_REGISTER)
+	{
+		uint8_t page = data;
+
+		if (page >= DMA_ECHO_SOURCE_START) {
+			page -= DMA_ECHO_PAGE_OFFSET;
+		}
+
+		dma.source = (uint16_t)page << 8;
+		dma.index  = 0;
+		dma.cycles = 0;
+		dma.starting = true;
+		dma.active	 = true;
+
+		memory->flat[address] = data;
 		return;
 	}
 
@@ -315,4 +367,31 @@ void memory_post_boot(Memory* memory)
 	memory->flat[INTERRUPT_FLAG_ADDR] = 0xE1;
 	memory->flat[DMA_REGISTER] = 0xFF;
 	memory->flat[INTERRUPT_ENABLE_ADDR] = 0x00;
+}
+
+void memory_dma_step(Memory* memory, uint8_t cycles)
+{
+	if (!dma.active) {
+		return;
+	}
+
+	dma.cycles += cycles;
+
+	while (dma.active && dma.cycles >= DMA_CYCLES_PER_BYTE)
+	{
+		dma.cycles -= DMA_CYCLES_PER_BYTE;
+
+		if (dma.starting)
+		{
+			dma.starting = false;
+			continue;
+		}
+
+		memory->flat[OAM_START + dma.index] = bus_read(memory, dma.source + dma.index);
+		dma.index++;
+
+		if (dma.index == OAM_SIZE) {
+			dma.active = false;
+		}
+	}
 }

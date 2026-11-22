@@ -154,6 +154,7 @@ SDL_AppResult SDL_AppIterate(void* appstate)
 
 		timer_step(memory, cycles);
 		ppu_step(memory, cycles);
+		memory_dma_step(memory, cycles);
 	}
 
 	uint64_t target_duration_ns = (uint64_t)(((double)cycles_this_frame * NANOSECONDS_PER_SECOND) / CLOCK_HZ);

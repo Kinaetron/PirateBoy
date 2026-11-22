@@ -104,5 +104,6 @@ bool load_rom(Memory* memory, const char* path);
 void unload_rom(Memory* memory);
 void memory_post_boot(Memory* memory);
 void write_byte(Memory* memory, uint16_t* address, uint8_t data);
+void memory_dma_step(Memory* memory, uint8_t cycles);
 
 #endif

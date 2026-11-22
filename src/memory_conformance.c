@@ -25,7 +25,9 @@ void memory_write(Memory* memory, uint16_t address, uint8_t data) {
 	memory->flat[address] = data;
 }
 
-void memory_divider_register_incrementer(Memory* memory) {}
+void memory_divider_register_incrementer(Memory* memory) { }
+
+void memory_dma_step(Memory* memory, uint8_t cycles) { }
 
 void set_if_interrupt(Memory* memory, Interrupt_Flag flag, bool value)
 {
