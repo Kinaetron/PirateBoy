@@ -41,6 +41,8 @@
 #define DMA_ECHO_SOURCE_START   0xE0
 #define DMA_ECHO_PAGE_OFFSET    0x20
 
+#define LCDC_ENABLE_BIT		0x80
+
 typedef enum
 {
 	BUTTONS = 5,
@@ -58,8 +60,12 @@ typedef struct
 
 static Dma dma;
 
-bool is_pending(Memory* memory)  {
+bool is_pending(Memory* memory) {
 	return (memory->flat[INTERRUPT_ENABLE_ADDR] & memory->flat[INTERRUPT_FLAG_ADDR] & 0x1F) != 0;
+}
+
+bool lcd_status(Memory* memory) {
+	return (memory->flat[LCD_CONTROL_ADDRES] & LCDC_ENABLE_BIT) != 0;
 }
 
 static bool dma_blocks_bus(uint16_t address) {

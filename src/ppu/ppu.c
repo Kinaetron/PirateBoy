@@ -7,7 +7,6 @@
 
 #define TILE_MAP_1_ADDRESS 0X9800
 #define TILE_MAP_2_ADDRESS 0X9C00
-#define LCD_CONTROL_ADDRES 0XFF40
 #define LCD_STATUS_ADDRESS 0XFF41
 #define OBJECT_ATTRIBUTE_ADDRESS 0XFE00
 #define LINE_Y_ADDRESS 0xFF44
@@ -129,6 +128,8 @@ uint8_t window_line_counter;
 static SDL_Window* ppu_window;
 static SDL_GPUDevice* ppu_gpu_device;
 
+static bool skip_first_frame;
+static bool previous_lcd_status;
 
 static void set_tile_data(Memory* memory)
 {
@@ -508,6 +509,9 @@ SDL_AppResult ppu_initialize(SDL_Window* window, SDL_GPUDevice* gpu_device)
 	ppu_window = window;
 	ppu_gpu_device = gpu_device;
 
+	skip_first_frame = false;
+	previous_lcd_status = true;
+
 	SDL_AppResult renderer_init = renderer_initialize(ppu_window, ppu_gpu_device);
 
 	if (renderer_init == SDL_APP_FAILURE) {
@@ -567,8 +571,39 @@ void ppu_post_boot(Memory* memory)
 	memory->flat[WINDOW_X_ADDRESS] = 0x00;
 }
 
+static void lcd_off(Memory* memory)
+{
+	line_dots = 0;
+	window_line_counter = 0;
+	set_ppu_mode(memory, H_BLANK);
+	previous_mode = H_BLANK;
+	memory_write(memory, LINE_Y_ADDRESS, 0);
+
+	for (size_t i = 0; i < TEXTURE_WIDTH * TEXTURE_HEIGHT; i++) {
+		pixel_buffer.pixels[i] = shade_colors[0];
+	}
+
+	renderer_upload_texture(renderer_texture, &pixel_buffer, ppu_gpu_device);
+	renderer_render(ppu_window, ppu_gpu_device, renderer_texture);
+}
+
 void ppu_step(Memory* memory, uint8_t cycles)
 {
+	bool lcd_enabled = lcd_status(memory);
+	if (!lcd_enabled && previous_lcd_status) {
+		lcd_off(memory);
+	}
+
+	if (lcd_enabled && !previous_lcd_status) {
+		skip_first_frame = true;
+	}
+
+	previous_lcd_status = lcd_enabled;
+
+	if (!lcd_enabled) {
+		return;
+	}
+
 	if (memory->vram_dirty)
 	{
 		set_tile_data(memory);
@@ -623,8 +658,14 @@ void ppu_step(Memory* memory, uint8_t cycles)
 		{
 			set_if_interrupt(memory, VBlank, true);
 
-			renderer_upload_texture(renderer_texture, &pixel_buffer, ppu_gpu_device);
-			renderer_render(ppu_window, ppu_gpu_device, renderer_texture);
+			if (skip_first_frame) {
+				skip_first_frame = false;
+			}
+			else
+			{
+				renderer_upload_texture(renderer_texture, &pixel_buffer, ppu_gpu_device);
+				renderer_render(ppu_window, ppu_gpu_device, renderer_texture);
+			}
 		}
 
 		check_lyc(memory, line);
