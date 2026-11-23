@@ -42,6 +42,8 @@
 
 #define DIVIDER_REGISTER	0XFF04
 
+#define LCD_CONTROL_ADDRES	0XFF40
+
 typedef struct
 {
 	char title[16];
@@ -105,5 +107,6 @@ void unload_rom(Memory* memory);
 void memory_post_boot(Memory* memory);
 void write_byte(Memory* memory, uint16_t* address, uint8_t data);
 void memory_dma_step(Memory* memory, uint8_t cycles);
+bool lcd_status(Memory* memory);
 
 #endif
