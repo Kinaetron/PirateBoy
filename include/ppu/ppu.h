@@ -8,7 +8,8 @@
 typedef enum
 {
 	OBP0 = 0,
-	OBP1 = 1
+	OBP1 = 1,
+	BGP = 2
 } Palette;
 
 void ppu_post_boot(Memory* memory);

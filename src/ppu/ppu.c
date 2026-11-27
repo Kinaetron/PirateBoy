@@ -309,11 +309,21 @@ static void background_queue_filler(Memory* memory)
 		PixelInfo pixel = 
 		{ 
 			.color = tiles[tile_number].pixel[tile_row][i], 
-			.palette = OBP0,
+			.palette = BGP,
 			.bg_priority = false 
 		};
 
 		enqueue(background_queue, &pixel);
+	}
+
+	PixelInfo discard;
+	uint8_t discard_pixels = scroll_x % TILE_SIZE;
+
+	if (fetcher_column == 0)
+	{
+		for (uint8_t i = 0; i < discard_pixels; i++) {
+			dequeue(background_queue, &discard);
+		}
 	}
 
 	fetcher_column++;
