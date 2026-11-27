@@ -71,11 +71,11 @@ typedef enum
 
 typedef enum
 {
-	LCD_STAT_LYC = 2,
-	LCD_STAT_MODE_0_INT = 3,
-	LCD_STAT_MODE_1_INT = 4,
-	LCD_STAT_MODE_2_INT = 5,
-	LCD_STAT_LYC_INT = 6
+	LCD_STAT_LYC_FLAG = 2,
+	LCD_STAT_MODE_0 = 3,
+	LCD_STAT_MODE_1 = 4,
+	LCD_STAT_MODE_2 = 5,
+	LCD_STAT_LYC_ENABLE = 6
 } LCD_Status_Flag;
 
 typedef enum
@@ -130,6 +130,8 @@ static SDL_GPUDevice* ppu_gpu_device;
 
 static bool skip_first_frame;
 static bool previous_lcd_status;
+static bool previous_signal = false;
+static PPU_Mode last_mode = H_BLANK;
 
 static void set_tile_data(Memory* memory)
 {
@@ -220,13 +222,7 @@ static void get_sprite_attributes(Memory* memory)
 static void check_lyc(Memory* memory, uint8_t line)
 {
 	uint8_t lyc = memory_read(memory, LYC_ADDRESS);
-	bool match = (line == lyc);
-
-	set_lcd_status_register(memory, LCD_STAT_LYC, match);
-
-	if (match && get_lcd_status_register(memory, LCD_STAT_LYC_INT)) {
-		set_if_interrupt(memory, LCD, true);
-	}
+	set_lcd_status_register(memory, LCD_STAT_LYC_FLAG, line == lyc);
 }
 
 static PPU_Mode compute_mode(uint8_t line_number, uint32_t line_dots)
@@ -587,6 +583,29 @@ static void lcd_off(Memory* memory)
 	renderer_render(ppu_window, ppu_gpu_device, renderer_texture);
 }
 
+static void lcd_interrupt_handler(Memory* memory, PPU_Mode mode, uint8_t line)
+{
+	uint8_t lyc = memory_read(memory, LYC_ADDRESS);
+
+	bool signal = 
+		(mode == H_BLANK && get_lcd_status_register(memory, LCD_STAT_MODE_0)) ||
+		(mode == V_BLANK && get_lcd_status_register(memory, LCD_STAT_MODE_1)) ||
+		(mode == OAM_SCAN && get_lcd_status_register(memory, LCD_STAT_MODE_2)) ||
+		(lyc == line && get_lcd_status_register(memory, LCD_STAT_LYC_ENABLE));
+
+	if (signal && !previous_signal) {
+		set_if_interrupt(memory, LCD, true);
+	}
+
+	previous_signal = signal;
+
+	if (mode == V_BLANK && last_mode != V_BLANK) {
+		set_if_interrupt(memory, VBlank, true);
+	}
+
+	last_mode = mode;
+}
+
 void ppu_step(Memory* memory, uint8_t cycles)
 {
 	bool lcd_enabled = lcd_status(memory);
@@ -656,8 +675,6 @@ void ppu_step(Memory* memory, uint8_t cycles)
 
 		if (line == LAST_DRAW_LINE) 
 		{
-			set_if_interrupt(memory, VBlank, true);
-
 			if (skip_first_frame) {
 				skip_first_frame = false;
 			}
@@ -669,5 +686,6 @@ void ppu_step(Memory* memory, uint8_t cycles)
 		}
 
 		check_lyc(memory, line);
+		lcd_interrupt_handler(memory, current_mode, line);
 	}
 }
